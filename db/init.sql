@@ -1,11 +1,11 @@
 -- User role enum
-create type user_role as enum ('user', 'admin');
+create type user_role as enum ('regular', 'admin');
 -- User schema
 create table if not exists "user" (
   id serial primary key,
   email varchar(255) unique,
   password text not null,
-  role user_role default 'user',
+  role user_role default 'regular',
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp,
   deleted_at timestamp
@@ -14,7 +14,9 @@ create table if not exists "user" (
 create table if not exists refresh_token (
   id serial primary key,
   user_id int not null references "user"(id),
-  token text not null unique
+  token text not null unique,
+  role user_role,
+  expires_at timestamp not null
 );
 -- Post schema
 create table if not exists post (
