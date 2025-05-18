@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"twitter-api/internal/repo/user"
+	"twitter-api/pkg/errs"
 	"twitter-api/pkg/utils"
 )
 
@@ -34,7 +35,7 @@ func (s *Service) ValidateUser(ctx context.Context, userDTO *user.LoginUserDTO) 
 
 	ok := utils.ComparePassword(u.Password, userDTO.Password)
 	if !ok {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, errs.ErrInvalidCredentials
 	}
 
 	return u, nil

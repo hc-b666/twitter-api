@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,8 +50,9 @@ func execute(host, port, dsn string) error {
 		rest.NewServer,
 		func(server *rest.Server) *http.Server {
 			return &http.Server{
-				Addr:    net.JoinHostPort(host, port),
-				Handler: server,
+				Addr:              net.JoinHostPort(host, port),
+				Handler:           server,
+				ReadHeaderTimeout: 5 * time.Second,
 			}
 		},
 		func() (*logger.Logger, error) {

@@ -43,8 +43,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Init() {
 	const (
 		baseURL = "/api/v1"
-		auth    = "/auth"
-		user    = "/user"
+		authURL = "/auth"
+		userURL = "/user"
 	)
 	s.mux.Use(gin.Logger())
 
@@ -63,13 +63,13 @@ func (s *Server) Init() {
 	group.GET("/health", s.healthHandler.HealthCheck)
 
 	// Auth routes
-	authGroup := group.Group(auth)
+	authGroup := group.Group(authURL)
 	authGroup.POST("/register", s.userHandler.Register)
 	authGroup.POST("/login", s.userHandler.Login)
 	authGroup.POST("/refresh", s.tokenHandler.Refresh)
 
 	// User routes
-	userGroup := group.Group(user)
+	userGroup := group.Group(userURL)
 	userGroup.Use(s.mw.Authenticate())
 	userGroup.GET("/profile", s.userHandler.Profile)
 }
