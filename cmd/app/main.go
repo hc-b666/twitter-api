@@ -14,8 +14,17 @@ import (
 	"twitter-api/internal/rest"
 	"twitter-api/internal/rest/middleware"
 	"twitter-api/pkg/db"
+	logger "twitter-api/pkg/logger"
 
 	healthHandler "twitter-api/internal/rest/handler/health"
+
+	userRepo "twitter-api/internal/repo/user"
+	userHandler "twitter-api/internal/rest/handler/user"
+	userService "twitter-api/internal/service/user"
+
+	tokenRepo "twitter-api/internal/repo/token"
+	tokenHandler "twitter-api/internal/rest/handler/token"
+	tokenService "twitter-api/internal/service/token"
 )
 
 func main() {
@@ -44,8 +53,17 @@ func execute(host, port, dsn string) error {
 				Handler: server,
 			}
 		},
+		func() (*logger.Logger, error) {
+			return logger.NewLogger("app.log")
+		},
 		middleware.New,
 		healthHandler.NewHandler,
+		userRepo.NewRepo,
+		userService.NewService,
+		userHandler.NewHandler,
+		tokenRepo.NewRepo,
+		tokenService.NewService,
+		tokenHandler.NewHandler,
 	}
 
 	container := dig.New()
