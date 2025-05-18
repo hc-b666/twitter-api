@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"twitter-api/pkg/errs"
 )
 
 type Logger struct {
@@ -12,9 +13,16 @@ type Logger struct {
 }
 
 func NewLogger(path string) (*Logger, error) {
+	if path == "" || path[0] == '/' || path[0] == '\\' {
+		return nil, errs.ErrInvalidLogPathFile
+	}
 	var file *os.File
 	const mode = 0o644
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, mode)
+	file, err := os.OpenFile(
+		path,
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		mode,
+	) // #nosec G304 -- path is validated above and controlled
 	if err != nil {
 		return nil, fmt.Errorf("log error: %w", err)
 	}

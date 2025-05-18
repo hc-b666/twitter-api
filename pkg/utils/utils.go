@@ -81,13 +81,13 @@ func CreateRefreshToken(userID int, role types.UserRole) (string, error) {
 	return refreshTokenStr, nil
 }
 
-func GenerateJwtTokens(userID int, role types.UserRole) (string, string, error) {
-	accessToken, err := CreateAccessToken(userID, role)
+func GenerateJwtTokens(userID int, role types.UserRole) (accessToken, refreshToken string, err error) {
+	accessToken, err = CreateAccessToken(userID, role)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create access token: %w", err)
 	}
 
-	refreshToken, err := CreateRefreshToken(userID, role)
+	refreshToken, err = CreateRefreshToken(userID, role)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create refresh token: %w", err)
 	}
