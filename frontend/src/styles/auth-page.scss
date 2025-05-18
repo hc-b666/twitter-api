@@ -1,0 +1,39 @@
+.auth-page {
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &-content {
+    padding: 24px;
+
+    width: 450px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    &-form {
+      width: 100%;
+
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      input {
+        width: 100%;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      a {
+        color: #34d399;
+        text-decoration: none;
+      }
+    }
+  }
+}

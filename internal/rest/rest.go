@@ -2,11 +2,13 @@ package rest
 
 import (
 	"net/http"
+	"time"
 	"twitter-api/internal/rest/handler/health"
 	"twitter-api/internal/rest/handler/token"
 	"twitter-api/internal/rest/handler/user"
 	"twitter-api/internal/rest/middleware"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,6 +47,15 @@ func (s *Server) Init() {
 		user    = "/user"
 	)
 	s.mux.Use(gin.Logger())
+
+	s.mux.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	group := s.mux.Group(baseURL)
 
