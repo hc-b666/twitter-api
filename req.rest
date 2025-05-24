@@ -1,0 +1,51 @@
+# Twitter API Documentation
+
+@version = "v1"
+@host = "localhost"
+@port = 9999
+@access_token = ""
+@refresh_token = ""
+
+### Register
+POST http://{{host}}:{{port}}/api/{{version}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "bobur1@gmail.com",
+  "password": "12345678"
+}
+
+### Login
+POST http://{{host}}:{{port}}/api/{{version}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "bobur1@gmail.com",
+  "password": "12345678"
+}
+
+### Get User Profile
+GET http://{{host}}:{{port}}/api/{{version}}/user/profile
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+### Refresh
+POST http://{{host}}:{{port}}/api/{{version}}/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "{{refresh_token}}"
+}
+
+### Health Check
+GET http://{{host}}:{{port}}/api/{{version}}/health
+
+### 
+
+POST http://localhost:9999/api/v1/create-admin
+Content-Type: application/json
+
+{
+  "email": "admin-bob@gmail.com",
+  "password": "admin"
+}

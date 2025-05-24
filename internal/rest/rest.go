@@ -7,6 +7,7 @@ import (
 	"twitter-api/internal/rest/handler/token"
 	"twitter-api/internal/rest/handler/user"
 	"twitter-api/internal/rest/middleware"
+	"twitter-api/pkg/types"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -42,9 +43,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Init() {
 	const (
-		baseURL = "/api/v1"
-		authURL = "/auth"
-		userURL = "/user"
+		baseURL  = "/api/v1"
+		authURL  = "/auth"
+		userURL  = "/user"
+		adminURL = "/admin"
 	)
 	s.mux.Use(gin.Logger())
 
@@ -61,6 +63,7 @@ func (s *Server) Init() {
 
 	// Public routes
 	group.GET("/health", s.healthHandler.HealthCheck)
+	group.POST("/create-admin", s.userHandler.CreateAdmin)
 
 	// Auth routes
 	authGroup := group.Group(authURL)
@@ -72,4 +75,10 @@ func (s *Server) Init() {
 	userGroup := group.Group(userURL)
 	userGroup.Use(s.mw.Authenticate())
 	userGroup.GET("/profile", s.userHandler.Profile)
+
+	// Admin routes
+	adminGroup := group.Group(adminURL)
+	adminGroup.Use(s.mw.Authenticate())
+	adminGroup.Use(s.mw.Authorize([]types.UserRole{types.Admin}))
+	adminGroup.GET("/users", s.userHandler.GetAllUsers)
 }

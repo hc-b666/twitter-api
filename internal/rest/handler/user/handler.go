@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"net/http"
 	userRepo "twitter-api/internal/repo/user"
 	tokenService "twitter-api/internal/service/token"
@@ -27,6 +26,17 @@ func NewHandler(
 		tokenSvc: tokenSvc,
 		l:        l,
 	}
+}
+
+func (h *Handler) GetAllUsers(c *gin.Context) {
+	users, err := h.userSvc.GetAll(c.Request.Context())
+	if err != nil {
+		h.l.Error("failed to get all users", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
 }
 
 func (h *Handler) Register(c *gin.Context) {
@@ -60,7 +70,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	accessToken, refreshToken, err := h.tokenSvc.CreateTokens(c.Request.Context(), u.ID, u.Role)
 	if err != nil {
-		fmt.Println(err)
+		h.l.Error("failed to create tokens", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tokens"})
 		return
 	}
@@ -94,4 +104,22 @@ func (h *Handler) Profile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *Handler) CreateAdmin(c *gin.Context) {
+	var userDTO userRepo.RegisterUserDTO
+	if err := c.ShouldBindJSON(&userDTO); err != nil {
+		h.l.Error("failed to bind JSON", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	_, err := h.userSvc.CreateAdmin(c.Request.Context(), &userDTO)
+	if err != nil {
+		h.l.Error("failed to create admin", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create admin"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "admin created successfully"})
 }
