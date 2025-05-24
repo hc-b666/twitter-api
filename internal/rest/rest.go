@@ -89,12 +89,14 @@ func (s *Server) Init() {
 	// Post routes
 	postGroup := group.Group(postsURL)
 	postGroup.Use(s.mw.Authenticate())
+	postGroup.GET("", s.postHandler.GetAllPosts)
 	postGroup.GET("/u/:userID", s.postHandler.GetUserPosts)
 	postGroup.GET("/:postID", s.postHandler.GetPostByID)
 	postGroup.POST("", s.postHandler.CreateNewPost)
 
 	// Comment routes
 	commentGroup := group.Group(commentURL)
+	commentGroup.Use(s.mw.Authenticate())
 	commentGroup.POST("", s.commentHandler.CreateNewComment)
 
 	// Admin routes

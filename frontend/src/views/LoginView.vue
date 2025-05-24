@@ -44,7 +44,7 @@ async function handleLogin() {
   try {
     const success = await authStore.login(user);
     if (success) {
-      router.push('/profile');
+      router.push('/');
       toast.add({
         severity: 'success',
         summary: 'Logged in',

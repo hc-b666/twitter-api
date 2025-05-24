@@ -10,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+	"github.com/uploadcare/uploadcare-go/ucare"
 	"go.uber.org/dig"
 
 	"twitter-api/internal/rest"
@@ -30,7 +32,7 @@ import (
 	postRepo "twitter-api/internal/repo/post"
 	postHandler "twitter-api/internal/rest/handler/post"
 	postService "twitter-api/internal/service/post"
-	
+
 	commentRepo "twitter-api/internal/repo/comment"
 	commentHandler "twitter-api/internal/rest/handler/comment"
 	commentService "twitter-api/internal/service/comment"
@@ -50,6 +52,26 @@ func main() {
 }
 
 func execute(host, port, dsn string) error {
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load .env file: %w", err)
+	}
+
+	creds := ucare.APICreds{
+		SecretKey: os.Getenv("UPLOADCARE_SECRET_KEY"),
+		PublicKey: os.Getenv("UPLOADCARE_PUBLIC_KEY"),
+	}
+
+	conf := &ucare.Config{
+		SignBasedAuthentication: true,
+		APIVersion:              ucare.APIv06,
+	}
+
+	client, err := ucare.NewClient(creds, conf)
+	if err != nil {
+		return fmt.Errorf("failed to create uploadcare client: %w", err)
+	}
+
 	deps := []interface{}{
 		func() (*pgxpool.Pool, error) {
 			return db.NewDB(dsn)
@@ -65,6 +87,9 @@ func execute(host, port, dsn string) error {
 		},
 		func() (*logger.Logger, error) {
 			return logger.NewLogger("app.log")
+		},
+		func() ucare.Client {
+			return client
 		},
 		middleware.New,
 		healthHandler.NewHandler,
@@ -89,7 +114,7 @@ func execute(host, port, dsn string) error {
 		}
 	}
 
-	err := container.Invoke(func(server *rest.Server) {
+	err = container.Invoke(func(server *rest.Server) {
 		server.Init()
 	})
 	if err != nil {
