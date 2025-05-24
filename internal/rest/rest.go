@@ -3,7 +3,9 @@ package rest
 import (
 	"net/http"
 	"time"
+	"twitter-api/internal/rest/handler/comment"
 	"twitter-api/internal/rest/handler/health"
+	"twitter-api/internal/rest/handler/post"
 	"twitter-api/internal/rest/handler/token"
 	"twitter-api/internal/rest/handler/user"
 	"twitter-api/internal/rest/middleware"
@@ -13,11 +15,13 @@ import (
 )
 
 type Server struct {
-	mux           *gin.Engine
-	healthHandler *health.Handler
-	userHandler   *user.Handler
-	tokenHandler  *token.Handler
-	mw            *middleware.Middleware
+	mux            *gin.Engine
+	healthHandler  *health.Handler
+	userHandler    *user.Handler
+	tokenHandler   *token.Handler
+	postHandler    *post.Handler
+	commentHandler *comment.Handler
+	mw             *middleware.Middleware
 }
 
 func NewServer(
@@ -25,14 +29,18 @@ func NewServer(
 	healthHandler *health.Handler,
 	userHandler *user.Handler,
 	tokenHandler *token.Handler,
+	postHandler *post.Handler,
+	commentHandler *comment.Handler,
 	mw *middleware.Middleware,
 ) *Server {
 	return &Server{
-		mux:           mux,
-		healthHandler: healthHandler,
-		userHandler:   userHandler,
-		tokenHandler:  tokenHandler,
-		mw:            mw,
+		mux:            mux,
+		healthHandler:  healthHandler,
+		userHandler:    userHandler,
+		tokenHandler:   tokenHandler,
+		postHandler:    postHandler,
+		commentHandler: commentHandler,
+		mw:             mw,
 	}
 }
 
@@ -42,9 +50,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Init() {
 	const (
-		baseURL = "/api/v1"
-		authURL = "/auth"
-		userURL = "/user"
+		baseURL    = "/api/v1"
+		authURL    = "/auth"
+		userURL    = "/user"
+		postURL    = "/post"
+		commentURL = "/comments"
 	)
 	s.mux.Use(gin.Logger())
 
@@ -72,4 +82,12 @@ func (s *Server) Init() {
 	userGroup := group.Group(userURL)
 	userGroup.Use(s.mw.Authenticate())
 	userGroup.GET("/profile", s.userHandler.Profile)
+
+	// Post routes
+	postGroup := group.Group(postURL)
+	postGroup.POST(postURL, s.postHandler.CreateNewPost)
+
+	// Comment routes
+	commentGroup := group.Group(commentURL)
+	commentGroup.POST(commentURL, s.commentHandler.CreateNewComment)
 }
