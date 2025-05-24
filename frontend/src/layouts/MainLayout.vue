@@ -1,6 +1,7 @@
 <template>
   <div class="main-layout">
 
+    <!-- Left sidebar - Links -->
     <aside class="main-layout-sidebar">
       <div class="main-layout-sidebar-title">
         <router-link to="/">
@@ -24,8 +25,17 @@
       </div>
     </aside>
 
+    <!-- Views -->
     <div class="main-layout-content">
       <router-view />
+    </div>
+
+    <!-- Right sidebar - Tags -->
+    <div class="main-layout-tags">
+      <div>
+        <h4>Tags</h4>
+        <p>Currently, on progress</p>
+      </div>
     </div>
   </div>
 </template>
@@ -47,7 +57,7 @@ const isAdmin = computed(() => authStore.isAdmin);
 .main-layout {
   margin: auto;
 
-  max-width: 1440px;
+  max-width: 1240px;
   height: 100vh;
 
   display: flex;
@@ -82,7 +92,7 @@ const isAdmin = computed(() => authStore.isAdmin);
       a {
         color: #fff;
         text-decoration: none;
-        
+
         padding: 7px 10.5px;
 
         border-radius: 8px;
@@ -126,9 +136,26 @@ const isAdmin = computed(() => authStore.isAdmin);
   &-content {
     padding: 1rem;
 
+    flex: 2;
+  }
+
+  &-tags {
     flex: 1;
 
+    border-left: 1px solid #27272a;
     border-right: 1px solid #27272a;
+
+    div {
+      padding: 1rem;
+
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      p {
+        font-size: 14px;
+      }
+    }
   }
 }
 </style>

@@ -16,9 +16,48 @@ func NewRepo(db *pgxpool.Pool) *Repo {
 	}
 }
 
+func (r *Repo) GetAll(ctx context.Context) ([]*GetAllPostsDTO, error) {
+	query := `
+		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
+		from post p
+		join "user" u on p.user_id = u.id
+ 		order by created_at desc;
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all posts: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []*GetAllPostsDTO
+	for rows.Next() {
+		post := &GetAllPostsDTO{}
+		err := rows.Scan(
+			&post.ID,
+			&post.UserId,
+			&post.Content,
+			&post.FileURL,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.Email,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan post: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate over posts: %w", err)
+	}
+
+	return posts, nil
+}
+
 func (r *Repo) GetByID(ctx context.Context, id int) (*PostInfo, error) {
 	query := `
-		select id, user_id, content, created_at, updated_at
+		select id, user_id, content, file_url, created_at, updated_at
 		from post
 		where id = $1;
 	`
@@ -28,6 +67,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*PostInfo, error) {
 		&post.ID,
 		&post.UserId,
 		&post.Content,
+		&post.FileURL,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
@@ -40,7 +80,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*PostInfo, error) {
 
 func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error) {
 	query := `
-		select id, user_id, content, created_at, updated_at
+		select id, user_id, content, file_url, created_at, updated_at
 		from post
 		where user_id = $1
 		order by created_at desc;
@@ -59,6 +99,7 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error)
 			&post.ID,
 			&post.UserId,
 			&post.Content,
+			&post.FileURL,
 			&post.CreatedAt,
 			&post.UpdatedAt,
 		)
@@ -75,11 +116,11 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error)
 	return posts, nil
 }
 
-func (r *Repo) Create(ctx context.Context, userID int, post *PostDTO) (int, error) {
+func (r *Repo) Create(ctx context.Context, userID int, content, fileURL string) (int, error) {
 	var id int
 	query := `
-		insert into post (user_id, content)
-		values ($1, $2)
+		insert into post (user_id, content, file_url)
+		values ($1, $2, $3)
 		returning id;
 	`
 
@@ -87,7 +128,8 @@ func (r *Repo) Create(ctx context.Context, userID int, post *PostDTO) (int, erro
 		ctx,
 		query,
 		userID,
-		post.Content,
+		content,
+		fileURL,
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create post: %w", err)

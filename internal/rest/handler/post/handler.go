@@ -1,27 +1,33 @@
 package post
 
 import (
+	"context"
 	"net/http"
 	"strconv"
-	postRepo "twitter-api/internal/repo/post"
+	"time"
 	postService "twitter-api/internal/service/post"
 	"twitter-api/pkg/logger"
 
 	"github.com/gin-gonic/gin"
+	"github.com/uploadcare/uploadcare-go/ucare"
+	"github.com/uploadcare/uploadcare-go/upload"
 )
 
 type Handler struct {
-	postSvc *postService.Service
-	l       *logger.Logger
+	ucareClient ucare.Client
+	postSvc     *postService.Service
+	l           *logger.Logger
 }
 
 func NewHandler(
+	ucareClient ucare.Client,
 	postSvc *postService.Service,
 	l *logger.Logger,
 ) *Handler {
 	return &Handler{
-		postSvc: postSvc,
-		l:       l,
+		ucareClient: ucareClient,
+		postSvc:     postSvc,
+		l:           l,
 	}
 }
 
@@ -40,14 +46,56 @@ func (h *Handler) CreateNewPost(c *gin.Context) {
 		return
 	}
 
-	var postDTO postRepo.PostDTO
-	if err := c.ShouldBindJSON(&postDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+	content := c.PostForm("content")
+	if content == "" {
+		h.l.Error("content is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
 		return
 	}
 
-	_, err := h.postSvc.CreatePost(c.Request.Context(), userID, &postDTO)
+	file, err := c.FormFile("file")
+	var fileURL string
+
+	if err == nil {
+		src, err := file.Open()
+		if err != nil {
+			h.l.Error("failed to open file", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
+			return
+		}
+		defer func() {
+			if err := src.Close(); err != nil {
+				h.l.Error("failed to close file", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close file"})
+				return
+			}
+		}()
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*60*time.Second)
+		defer cancel()
+
+		uploadSvc := upload.NewService(h.ucareClient)
+
+		params := upload.FileParams{
+			Data: src,
+			Name: file.Filename,
+		}
+
+		fileID, err := uploadSvc.File(ctx, params)
+		if err != nil {
+			h.l.Error("failed to upload file", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload file"})
+			return
+		}
+
+		fileURL = "https://ucarecdn.com/" + fileID + "/" + file.Filename
+	} else {
+		fileURL = ""
+	}
+
+	_, err = h.postSvc.CreatePost(c.Request.Context(), userID, content, fileURL)
 	if err != nil {
+		h.l.Error("failed to create post", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create post"})
 		return
 	}
@@ -103,4 +151,15 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, post)
+}
+
+func (h *Handler) GetAllPosts(c *gin.Context) {
+	posts, err := h.postSvc.GetAll(c.Request.Context())
+	if err != nil {
+		h.l.Error("failed to get all posts", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get all posts"})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
 }
