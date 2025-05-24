@@ -15,9 +15,11 @@ import Button from "primevue/button";
 import { useRouter } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from "primevue";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const user = computed(() => authStore.getUser);
 const loading = computed(() => authStore.loading);
@@ -31,5 +33,11 @@ onMounted(async () => {
 function handleLogout() {
   authStore.logout();
   router.push("/login");
+  toast.add({
+    severity: "success",
+    summary: "Logged out",
+    detail: "Successfully logged out!",
+    life: 3000,
+  });
 };
 </script>
