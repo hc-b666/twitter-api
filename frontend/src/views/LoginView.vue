@@ -26,9 +26,11 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const email = ref('');
 const password = ref('');
@@ -41,7 +43,15 @@ async function handleLogin() {
   };
   try {
     const success = await authStore.login(user);
-    if (success) router.push('/profile');
+    if (success) {
+      router.push('/profile');
+      toast.add({
+        severity: 'success',
+        summary: 'Logged in',
+        detail: 'Successfully logged in!',
+        life: 3000,
+      });
+    }
     else error.value = err.message || 'An error occured';
 
   } catch (err) {

@@ -26,6 +26,10 @@ import (
 	tokenRepo "twitter-api/internal/repo/token"
 	tokenHandler "twitter-api/internal/rest/handler/token"
 	tokenService "twitter-api/internal/service/token"
+
+	postRepo "twitter-api/internal/repo/post"
+	postHandler "twitter-api/internal/rest/handler/post"
+	postService "twitter-api/internal/service/post"
 )
 
 func main() {
@@ -66,6 +70,9 @@ func execute(host, port, dsn string) error {
 		tokenRepo.NewRepo,
 		tokenService.NewService,
 		tokenHandler.NewHandler,
+		postRepo.NewRepo,
+		postService.NewService,
+		postHandler.NewHandler,
 	}
 
 	container := dig.New()
