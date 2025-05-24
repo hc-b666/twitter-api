@@ -95,7 +95,7 @@ func (s *Server) Init() {
 
 	// Comment routes
 	commentGroup := group.Group(commentURL)
-	commentGroup.POST(commentURL, s.commentHandler.CreateNewComment)
+	commentGroup.POST("", s.commentHandler.CreateNewComment)
 
 	// Admin routes
 	adminGroup := group.Group(adminURL)
