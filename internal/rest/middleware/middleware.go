@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"twitter-api/internal/service/user"
 	"twitter-api/pkg/logger"
 	"twitter-api/pkg/types"
@@ -30,18 +31,16 @@ func New(
 }
 
 func (m *Middleware) Authenticate() gin.HandlerFunc {
-	const tokenHeaderLength = 7
-
 	return func(c *gin.Context) {
-		authHeader := c.Request.Header.Get("Authorization")
-		if authHeader == "" || len(authHeader) < tokenHeaderLength || authHeader[:tokenHeaderLength] != "Bearer " {
+		authHeader := c.GetHeader("Authorization")
+		if !strings.HasPrefix(authHeader, "Bearer ") {
 			m.l.Error("missing or invalid Authorization header")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			c.Abort()
 			return
 		}
 
-		tokenStr := authHeader[tokenHeaderLength:]
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		userID, userRole, err := utils.VerifyAccessToken(tokenStr)
 		if err != nil {
