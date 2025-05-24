@@ -3,6 +3,7 @@ package rest
 import (
 	"net/http"
 	"time"
+	"twitter-api/internal/rest/handler/comment"
 	"twitter-api/internal/rest/handler/health"
 	"twitter-api/internal/rest/handler/post"
 	"twitter-api/internal/rest/handler/token"
@@ -15,12 +16,13 @@ import (
 )
 
 type Server struct {
-	mux           *gin.Engine
-	healthHandler *health.Handler
-	userHandler   *user.Handler
-	tokenHandler  *token.Handler
-	postHandler   *post.Handler
-	mw            *middleware.Middleware
+	mux            *gin.Engine
+	healthHandler  *health.Handler
+	userHandler    *user.Handler
+	tokenHandler   *token.Handler
+	postHandler    *post.Handler
+	commentHandler *comment.Handler
+	mw             *middleware.Middleware
 }
 
 func NewServer(
@@ -29,15 +31,17 @@ func NewServer(
 	userHandler *user.Handler,
 	tokenHandler *token.Handler,
 	postHandler *post.Handler,
+	commentHandler *comment.Handler,
 	mw *middleware.Middleware,
 ) *Server {
 	return &Server{
-		mux:           mux,
-		healthHandler: healthHandler,
-		userHandler:   userHandler,
-		tokenHandler:  tokenHandler,
-		postHandler:   postHandler,
-		mw:            mw,
+		mux:            mux,
+		healthHandler:  healthHandler,
+		userHandler:    userHandler,
+		tokenHandler:   tokenHandler,
+		postHandler:    postHandler,
+		commentHandler: commentHandler,
+		mw:             mw,
 	}
 }
 
@@ -47,12 +51,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Init() {
 	const (
-		baseURL  = "/api/v1"
-		authURL  = "/auth"
-		userURL  = "/user"
-		adminURL = "/admin"
-
-		postsURL = "/posts"
+		baseURL    = "/api/v1"
+		authURL    = "/auth"
+		userURL    = "/user"
+		adminURL   = "/admin"
+		postsURL   = "/posts"
+		commentURL = "/comments"
 	)
 	s.mux.Use(gin.Logger())
 
@@ -88,6 +92,10 @@ func (s *Server) Init() {
 	postGroup.GET("/u/:userID", s.postHandler.GetUserPosts)
 	postGroup.GET("/:postID", s.postHandler.GetPostByID)
 	postGroup.POST("", s.postHandler.CreateNewPost)
+
+	// Comment routes
+	commentGroup := group.Group(commentURL)
+	commentGroup.POST("", s.commentHandler.CreateNewComment)
 
 	// Admin routes
 	adminGroup := group.Group(adminURL)
