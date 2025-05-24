@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 	"twitter-api/internal/rest/handler/health"
+	"twitter-api/internal/rest/handler/post"
 	"twitter-api/internal/rest/handler/token"
 	"twitter-api/internal/rest/handler/user"
 	"twitter-api/internal/rest/middleware"
@@ -18,6 +19,7 @@ type Server struct {
 	healthHandler *health.Handler
 	userHandler   *user.Handler
 	tokenHandler  *token.Handler
+	postHandler   *post.Handler
 	mw            *middleware.Middleware
 }
 
@@ -26,6 +28,7 @@ func NewServer(
 	healthHandler *health.Handler,
 	userHandler *user.Handler,
 	tokenHandler *token.Handler,
+	postHandler *post.Handler,
 	mw *middleware.Middleware,
 ) *Server {
 	return &Server{
@@ -33,6 +36,7 @@ func NewServer(
 		healthHandler: healthHandler,
 		userHandler:   userHandler,
 		tokenHandler:  tokenHandler,
+		postHandler:   postHandler,
 		mw:            mw,
 	}
 }
@@ -47,6 +51,8 @@ func (s *Server) Init() {
 		authURL  = "/auth"
 		userURL  = "/user"
 		adminURL = "/admin"
+
+		postsURL = "/posts"
 	)
 	s.mux.Use(gin.Logger())
 
@@ -75,6 +81,13 @@ func (s *Server) Init() {
 	userGroup := group.Group(userURL)
 	userGroup.Use(s.mw.Authenticate())
 	userGroup.GET("/profile", s.userHandler.Profile)
+
+	// Post routes
+	postGroup := group.Group(postsURL)
+	postGroup.Use(s.mw.Authenticate())
+	postGroup.GET("/u/:userID", s.postHandler.GetUserPosts)
+	postGroup.GET("/:postID", s.postHandler.GetPostByID)
+	postGroup.POST("", s.postHandler.CreateNewPost)
 
 	// Admin routes
 	adminGroup := group.Group(adminURL)

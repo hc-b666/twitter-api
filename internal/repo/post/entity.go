@@ -13,8 +13,6 @@ type Post struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
 type PostDTO struct {
-	ID      int    `json:"id"`
-	UserId  int    `json:"user_id"`
 	Content string `json:"content"`
 }
 

@@ -17,28 +17,29 @@ func NewService(postRepo *post.Repo) *Service {
 }
 
 func (s *Service) GetByID(ctx context.Context, id int) (*post.PostInfo, error) {
-	u, err := s.postRepo.GetByID(ctx, id)
+	post, err := s.postRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
 
-	return u, nil
+	return post, nil
 }
 
-func (s *Service) GetUserPosts(ctx context.Context, postDTO *post.PostDTO) (*post.Post, error) {
-	u, err := s.postRepo.GetByUserID(ctx, postDTO.UserId)
+func (s *Service) GetUserPosts(ctx context.Context, userID int) ([]*post.PostInfo, error) {
+	posts, err := s.postRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
 
-	return u, nil
+	return posts, nil
 }
 
 func (s *Service) CreatePost(
 	ctx context.Context,
+	userID int,
 	postDTO *post.PostDTO,
 ) (int, error) {
-	id, err := s.postRepo.Create(ctx, postDTO)
+	id, err := s.postRepo.Create(ctx, userID, postDTO)
 	if err != nil {
 		return 0, fmt.Errorf("err: %w", err)
 	}

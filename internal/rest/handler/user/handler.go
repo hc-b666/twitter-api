@@ -82,21 +82,21 @@ func (h *Handler) Login(c *gin.Context) {
 }
 
 func (h *Handler) Profile(c *gin.Context) {
-	userID, ok := c.Get("userID")
+	userIDStr, ok := c.Get("userID")
 	if !ok {
 		h.l.Error("user ID not found in context")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	id, ok := userID.(int)
+	userID, ok := userIDStr.(int)
 	if !ok {
 		h.l.Error("user ID is not an integer")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	user, err := h.userSvc.GetByID(c.Request.Context(), id)
+	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
 	if err != nil {
 		h.l.Error("failed to get user by ID", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user"})
