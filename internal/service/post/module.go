@@ -17,12 +17,12 @@ func NewService(postRepo *post.Repo) *Service {
 }
 
 func (s *Service) GetByID(ctx context.Context, id int) (*post.PostInfo, error) {
-	post, err := s.postRepo.GetByID(ctx, id)
+	p, err := s.postRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
 
-	return post, nil
+	return p, nil
 }
 
 func (s *Service) GetUserPosts(ctx context.Context, userID int) ([]*post.PostInfo, error) {
