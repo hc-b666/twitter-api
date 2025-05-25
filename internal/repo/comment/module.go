@@ -39,28 +39,42 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*CommentInfo, error) {
 	return comment, nil
 }
 
-func (r *Repo) GetByUserID(ctx context.Context, userID int) (*Comment, error) {
+func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*UserComment, error) {
 	query := `
-		select id, user_id,post_id, content, created_at, updated_at, deleted_at
-		from comment
-		where user_id = $1;
+		select c.id, c.user_id, c.post_id, c.content, c.created_at, u.email 
+		from comment c
+		join "user" u on c.user_id = u.id
+		where user_id = $1 and c.deleted_at is null;
 	`
 
-	comment := &Comment{}
-	err := r.db.QueryRow(ctx, query, userID).Scan(
-		&comment.ID,
-		&comment.UserId,
-		&comment.PostId,
-		&comment.Content,
-		&comment.CreatedAt,
-		&comment.UpdatedAt,
-		&comment.DeletedAt,
-	)
+	comments := []*UserComment{}
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get comment by user_id: %w", err)
+		return nil, fmt.Errorf("failed to get comments by user id: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		comment := &UserComment{}
+		err := rows.Scan(
+			&comment.ID,
+			&comment.UserId,
+			&comment.PostId,
+			&comment.Content,
+			&comment.CreatedAt,
+			&comment.Email,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan comment: %w", err)
+		}
+		comments = append(comments, comment)
 	}
 
-	return comment, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate over comments: %w", err)
+	}
+
+	return comments, nil
 }
 
 func (r *Repo) Create(ctx context.Context, userID, postID int, comment *CommentDTO) (int, error) {

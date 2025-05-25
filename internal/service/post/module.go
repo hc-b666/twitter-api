@@ -16,8 +16,8 @@ func NewService(postRepo *post.Repo) *Service {
 	}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]*post.GetAllPostsDTO, error) {
-	posts, err := s.postRepo.GetAll(ctx)
+func (s *Service) GetAll(ctx context.Context, limit, offset int) ([]*post.GetAllPostsDTO, error) {
+	posts, err := s.postRepo.GetAll(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}

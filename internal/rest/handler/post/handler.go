@@ -153,8 +153,26 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
+func getPageFromQuery(c *gin.Context) int {
+	pageStr := c.Query("page")
+	if pageStr == "" {
+		return 1
+	}
+
+	if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
+		return page
+	}
+
+	return 1
+}
+
 func (h *Handler) GetAllPosts(c *gin.Context) {
-	posts, err := h.postSvc.GetAll(c.Request.Context())
+	page := getPageFromQuery(c)
+
+	limit := 10
+	offset := (page - 1) * limit
+
+	posts, err := h.postSvc.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		h.l.Error("failed to get all posts", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get all posts"})

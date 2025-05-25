@@ -95,3 +95,12 @@ func (s *Service) IsAuthor(ctx context.Context, userID, commentID int) (bool, er
 
 	return isAuthor, nil
 }
+
+func (s *Service) GetUserComments(ctx context.Context, userID int) ([]*comment.UserComment, error) {
+	comments, err := s.commentRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("err: %w", err)
+	}
+
+	return comments, nil
+}

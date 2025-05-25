@@ -17,16 +17,17 @@ func NewRepo(db *pgxpool.Pool) *Repo {
 	}
 }
 
-func (r *Repo) GetAll(ctx context.Context) ([]*GetAllPostsDTO, error) {
+func (r *Repo) GetAll(ctx context.Context, limit, offset int) ([]*GetAllPostsDTO, error) {
 	query := `
 		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
 		from post p
 		join "user" u on p.user_id = u.id
 		where p.deleted_at is null
- 		order by created_at desc;
+ 		order by created_at desc
+		limit $1 offset $2;
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all posts: %w", err)
 	}

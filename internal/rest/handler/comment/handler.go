@@ -266,3 +266,28 @@ func (h *Handler) HardDeleteComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+
+func (h *Handler) GetUserComments(c *gin.Context) {
+	userIDStr, ok := c.Params.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is required"})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is invalid"})
+		return
+	}
+
+	comments, err := h.commentSvc.GetUserComments(c.Request.Context(), userID)
+	if err != nil {
+		h.l.Error("failed to get user comments", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user comments"})
+		return
+	}
+
+	c.JSON(http.StatusOK, comments)
+}
