@@ -49,7 +49,7 @@ func (h *Handler) CommentInfo(c *gin.Context) {
 	}
 
 	commentID, err := strconv.Atoi(commentIDStr)
-	if !ok {
+	if err != nil {
 		h.l.Error("comment ID is not an integer")
 		c.JSON(http.StatusNotFound, gin.H{"error": "no comment added"})
 		return
@@ -71,7 +71,7 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
 		return
 	}
-	//should be corrected
+
 	content := c.PostForm("content")
 	if content == "" {
 		h.l.Error("content is required")

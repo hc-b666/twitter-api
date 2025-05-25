@@ -83,31 +83,23 @@ func (r *Repo) Create(ctx context.Context, comment *CommentDTO) (int, error) {
 
 	return id, nil
 }
-func (r *Repo) SoftDelete(ctx context.Context, id int) (*Comment, error) {
+func (r *Repo) SoftDelete(ctx context.Context, id int) error {
 	query := `update comment
        	set deleted_at=now()
 		where id = $1;`
-	comment := &Comment{}
-	err := r.db.QueryRow(ctx, query, id).Scan(
-		&comment.ID,
-		&comment.UserId,
-		&comment.PostId,
-		&comment.Content,
-		&comment.CreatedAt,
-		&comment.UpdatedAt,
-		&comment.DeletedAt,
-	)
+
+	err := r.db.QueryRow(ctx, query, id).Scan(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete comment by id: %w", err)
+		return fmt.Errorf("failed to delete comment by id: %w", err)
 	}
 
-	return comment, nil
+	return nil
 }
 func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from comment
 				id = $1;`
 
-	err := r.db.QueryRow(ctx, query, id)
+	err := r.db.QueryRow(ctx, query, id).Scan(&id)
 	if err != nil {
 		return fmt.Errorf("failed to delete comment by id: %w", err)
 	}

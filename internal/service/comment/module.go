@@ -46,14 +46,15 @@ func (s *Service) CreateComment(
 	return id, nil
 }
 
-func (s *Service) SoftDeleteComment(ctx context.Context, id int) (int, error) {
-	comment, err := s.commentRepo.SoftDelete(ctx, id)
-	if err != nil {
-		return 0, fmt.Errorf("err: %w", err)
-	}
-	//here should i return comment or not?
+func (s *Service) SoftDeleteComment(ctx context.Context, id int) (string, error) {
+	err := s.commentRepo.SoftDelete(ctx, id)
 
-	return comment.ID, nil
+	if err != nil {
+		return "", fmt.Errorf("err: %w", err)
+	}
+
+	msg := " comment successfully deleted"
+	return msg, nil
 }
 func (s *Service) HardDeleteComment(ctx context.Context, id int) error {
 	err := s.commentRepo.HardDelete(ctx, id)
