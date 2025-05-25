@@ -63,18 +63,18 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) (*Comment, error) {
 	return comment, nil
 }
 
-func (r *Repo) Create(ctx context.Context, comment *CommentDTO) (int, error) {
+func (r *Repo) Create(ctx context.Context, userID, postID int, comment *CommentDTO) (int, error) {
 	var id int
 	query := `
-		insert into comment (user_id,post_id, content)
-		values ($1, $2,$3)
+		insert into comment (user_id, post_id, content)
+		values ($1, $2, $3)
 		returning id;
 	`
 	err := r.db.QueryRow(
 		ctx,
 		query,
-		comment.UserId,
-		comment.PostId,
+		userID,
+		postID,
 		comment.Content,
 	).Scan(&id)
 	if err != nil {
@@ -83,18 +83,22 @@ func (r *Repo) Create(ctx context.Context, comment *CommentDTO) (int, error) {
 
 	return id, nil
 }
-func (r *Repo) SoftDelete(ctx context.Context, id int) error {
-	query := `update comment
-       	set deleted_at=now()
-		where id = $1;`
 
-	err := r.db.QueryRow(ctx, query, id).Scan(id)
+func (r *Repo) SoftDelete(ctx context.Context, id int) error {
+	query := `
+		update comment
+    set deleted_at = now()
+		where id = $1;
+	`
+
+	_, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete comment by id: %w", err)
+		return fmt.Errorf("failed to soft delete comment by id: %w", err)
 	}
 
 	return nil
 }
+
 func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from comment
 				id = $1;`
@@ -106,6 +110,7 @@ func (r *Repo) HardDelete(ctx context.Context, id int) error {
 
 	return nil
 }
+
 func (r *Repo) Update(ctx context.Context, id int, content string) (*CommentInfo, error) {
 	query := `update comment
 		set content=$1, updated_at=now()
@@ -128,7 +133,7 @@ func (r *Repo) Update(ctx context.Context, id int, content string) (*CommentInfo
 
 func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllCommentsDTO, error) {
 	query := `
-		select c.id, c.user_id,c.post_id, c.content, c.created_at, c.updated_at, u.email
+		select c.id, c.user_id, c.content, c.created_at, c.updated_at, u.email
 		from comment c 
 		join "user" u on c.user_id = u.id
 		where c.post_id = $1 and c.deleted_at IS NULL
@@ -164,6 +169,7 @@ func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllC
 
 	return comments, nil
 }
+
 func (r *Repo) GetAllComments(ctx context.Context) ([]*Comment, error) {
 	query := `
 		select id, user_id, post_id,content, created_at, updated_at, deleted_at	
@@ -200,4 +206,21 @@ func (r *Repo) GetAllComments(ctx context.Context) ([]*Comment, error) {
 	}
 
 	return comments, nil
+}
+
+func (r *Repo) IsAuthor(ctx context.Context, userID, commentID int) (bool, error) {
+	query := `
+		select exists(
+			select 1 from comment
+			where id = $1 and user_id = $2
+		);
+	`
+
+	var exists bool
+	err := r.db.QueryRow(ctx, query, commentID, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if user is author: %w", err)
+	}
+
+	return exists, nil
 }

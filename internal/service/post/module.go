@@ -25,7 +25,7 @@ func (s *Service) GetAll(ctx context.Context) ([]*post.GetAllPostsDTO, error) {
 	return posts, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, id int) (*post.PostInfo, error) {
+func (s *Service) GetByID(ctx context.Context, id int) (*post.GetAllPostsDTO, error) {
 	p, err := s.postRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)

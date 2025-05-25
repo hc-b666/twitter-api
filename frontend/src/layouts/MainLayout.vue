@@ -20,7 +20,7 @@
         <router-link to="/profile">
           <Avatar :label="user?.email[0].toUpperCase()" class="mr-2" size="normal" style="background-color: #6ee7b7; 
             color: #000" shape="circle" />
-          <span>{{ user.email }}</span>
+          <span>{{ user?.email }}</span>
         </router-link>
       </div>
     </aside>

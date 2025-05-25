@@ -1,10 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 
-import HomeView from "@/views/HomeView.vue";
-import RegisterView from "@/views/RegisterView.vue";
-import LoginView from "@/views/LoginView.vue";
-import ProfileView from "@/views/ProfileView.vue";
 import MainLayout from "./layouts/MainLayout.vue";
 import AuthLayout from "./layouts/AuthLayout.vue";
 
@@ -18,7 +14,7 @@ export const router = createRouter({
         {
           path: "",
           name: "home",
-          component: HomeView,
+          component: () => import("@/views/HomeView.vue"),
           meta: {
             requiresAuth: true,
           },
@@ -26,7 +22,15 @@ export const router = createRouter({
         {
           path: "profile",
           name: "profile",
-          component: ProfileView,
+          component: () => import("@/views/ProfileView.vue"),
+          meta: {
+            requiresAuth: true,
+          },
+        },
+        {
+          path: "post/:postId",
+          name: "post",
+          component: () => import("@/views/SinglePostPage.vue"),
           meta: {
             requiresAuth: true,
           },
@@ -49,7 +53,7 @@ export const router = createRouter({
         {
           path: "register",
           name: "register",
-          component: RegisterView,
+          component: () => import("@/views/RegisterView.vue"),
           meta: {
             requiresGuest: true,
           },
@@ -57,7 +61,7 @@ export const router = createRouter({
         {
           path: "login",
           name: "login",
-          component: LoginView,
+          component: () => import("@/views/LoginView.vue"),
           meta: {
             requiresGuest: true,
           },

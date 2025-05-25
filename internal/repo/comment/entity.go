@@ -11,10 +11,8 @@ type Comment struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
 }
+
 type CommentDTO struct {
-	ID      int    `json:"id"`
-	UserId  int    `json:"user_id"`
-	PostId  int    `json:"post_id"`
 	Content string `json:"content"`
 }
 

@@ -24,3 +24,7 @@ export function formatDateAndHour(dateStr) {
     })
   );
 }
+
+export const isImage = (post) => {
+  return post && post.file_url && post.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/);
+};

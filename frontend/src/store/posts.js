@@ -50,5 +50,19 @@ export const usePostsStore = defineStore("posts", {
         this.loading = false;
       }
     },
+
+    async getPostById(postId) {
+      this.loading = true;
+
+      try {
+        const res = await axios.get(`/posts/${postId}`);
+        return res.data;
+      } catch (err) {
+        console.error("get post by id", err);
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    }
   },
 });

@@ -55,14 +55,15 @@ func (r *Repo) GetAll(ctx context.Context) ([]*GetAllPostsDTO, error) {
 	return posts, nil
 }
 
-func (r *Repo) GetByID(ctx context.Context, id int) (*PostInfo, error) {
+func (r *Repo) GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error) {
 	query := `
-		select id, user_id, content, file_url, created_at, updated_at
-		from post
-		where id = $1;
+		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
+		from post p
+		join "user" u on p.user_id = u.id
+		where p.id = $1;
 	`
 
-	post := &PostInfo{}
+	post := &GetAllPostsDTO{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&post.ID,
 		&post.UserId,
@@ -70,6 +71,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*PostInfo, error) {
 		&post.FileURL,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.Email,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get post by id: %w", err)
