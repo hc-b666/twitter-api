@@ -163,3 +163,129 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 
 	c.JSON(http.StatusOK, posts)
 }
+
+func (h *Handler) UpdateExistingPost(c *gin.Context) {
+	postIDStr, ok := c.Params.Get("postID")
+	if !ok {
+		h.l.Error("post ID not found in context")
+		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		return
+	}
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		h.l.Error("post ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "post not found"})
+		return
+	}
+
+	content := c.PostForm("content")
+	if content == "" {
+		h.l.Error("content is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
+		return
+	}
+
+	err = h.postSvc.UpdatePostContent(c.Request.Context(), postID, content)
+	if err != nil {
+		h.l.Error("failed to update post content", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "post updated successfully"})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		h.l.Error("failed to open file", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
+		return
+	}
+	defer func() {
+		if cerr := src.Close(); cerr != nil {
+			h.l.Error("failed to close file", cerr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close file"})
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*60*time.Second)
+	defer cancel()
+
+	uploadSvc := upload.NewService(h.ucareClient)
+
+	params := upload.FileParams{
+		Data: src,
+		Name: file.Filename,
+	}
+
+	fileID, err := uploadSvc.File(ctx, params)
+	if err != nil {
+		h.l.Error("failed to upload file", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload file"})
+		return
+	}
+
+	fileURL := "https://ucarecdn.com/" + fileID + "/" + file.Filename
+
+	err = h.postSvc.UpdatePostFileURL(c.Request.Context(), postID, fileURL)
+	if err != nil {
+		h.l.Error("failed to update post file URL", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update post file URL"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "post updated successfully"})
+}
+
+func (h *Handler) SoftDeleteByID(c *gin.Context) {
+	postIDStr, ok := c.Params.Get("postID")
+	if !ok {
+		h.l.Error("post with this ID not found")
+		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		return
+	}
+
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		h.l.Error("post with this ID not found")
+		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		return
+	}
+
+	post, err := h.postSvc.SoftDeletePost(c.Request.Context(), postID)
+	if err != nil {
+		h.l.Error("failed to get post by ID", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post"})
+		return
+	}
+
+	c.JSON(http.StatusOK, post)
+}
+
+func (h *Handler) HardDeleteByID(c *gin.Context) {
+	postIDStr, ok := c.Params.Get("postID")
+	if !ok {
+		h.l.Error("post with this ID not found")
+		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		return
+	}
+
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		h.l.Error("post with this ID not found")
+		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		return
+	}
+
+	post, err := h.postSvc.HardDeletePost(c.Request.Context(), postID)
+	if err != nil {
+		h.l.Error("failed to get post by ID", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post"})
+		return
+	}
+
+	c.JSON(http.StatusOK, post)
+}
