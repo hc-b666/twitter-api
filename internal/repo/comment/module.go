@@ -101,7 +101,7 @@ func (r *Repo) SoftDelete(ctx context.Context, id int) error {
 
 func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from comment
-				id = $1;`
+			where id = $1;`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(&id)
 	if err != nil {

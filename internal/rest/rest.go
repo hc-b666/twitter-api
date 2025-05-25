@@ -93,6 +93,8 @@ func (s *Server) Init() {
 	postGroup.GET("/u/:userID", s.postHandler.GetUserPosts)
 	postGroup.GET("/:postID", s.postHandler.GetPostByID)
 	postGroup.POST("", s.postHandler.CreateNewPost)
+	postGroup.POST("/:postID", s.postHandler.SoftDeleteByID)
+	postGroup.PUT("/:postID", s.postHandler.UpdateExistingPost)
 
 	// Comment routes
 	commentGroup := group.Group(commentURL)
@@ -109,4 +111,6 @@ func (s *Server) Init() {
 	adminGroup.GET("/users", s.userHandler.GetAllUsers)
 	adminGroup.DELETE("/:commentID", s.commentHandler.HardDeleteComment)
 	adminGroup.GET("/comments", s.commentHandler.GetAllComments)
+	adminGroup.DELETE("/:postID", s.postHandler.HardDeleteByID)
+
 }
