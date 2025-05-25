@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 	userRepo "twitter-api/internal/repo/user"
 	tokenService "twitter-api/internal/service/token"
 	userService "twitter-api/internal/service/user"
@@ -122,4 +123,29 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "admin created successfully"})
+}
+
+func (h *Handler) GetUserByID(c *gin.Context) {
+	userIDStr, ok := c.Params.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.l.Error("user ID is not an integer", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		h.l.Error("failed to get user by ID", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }

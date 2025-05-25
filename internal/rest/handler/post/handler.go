@@ -153,8 +153,26 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
+func getPageFromQuery(c *gin.Context) int {
+	pageStr := c.Query("page")
+	if pageStr == "" {
+		return 1
+	}
+
+	if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
+		return page
+	}
+
+	return 1
+}
+
 func (h *Handler) GetAllPosts(c *gin.Context) {
-	posts, err := h.postSvc.GetAll(c.Request.Context())
+	page := getPageFromQuery(c)
+
+	limit := 10
+	offset := (page - 1) * limit
+
+	posts, err := h.postSvc.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		h.l.Error("failed to get all posts", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get all posts"})
@@ -255,14 +273,41 @@ func (h *Handler) SoftDeleteByID(c *gin.Context) {
 		return
 	}
 
-	post, err := h.postSvc.SoftDeletePost(c.Request.Context(), postID)
-	if err != nil {
-		h.l.Error("failed to get post by ID", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post"})
+	userIDStr, ok := c.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	c.JSON(http.StatusOK, post)
+	userID, ok := userIDStr.(int)
+	if !ok {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	isAuthor, err := h.postSvc.IsAuthor(c.Request.Context(), postID, userID)
+	if err != nil {
+		h.l.Error("failed to check if user is author", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check author"})
+		return
+	}
+
+	if !isAuthor {
+		h.l.Error("user is not the author of the post")
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the author of this post"})
+		return
+	}
+
+	err = h.postSvc.SoftDeletePost(c.Request.Context(), postID)
+	if err != nil {
+		h.l.Error("failed to soft delete post", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to soft delete post"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "post soft deleted successfully"})
 }
 
 func (h *Handler) HardDeleteByID(c *gin.Context) {

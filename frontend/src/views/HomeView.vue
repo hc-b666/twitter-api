@@ -21,7 +21,7 @@
         <Skeleton width="100%" height="16rem" />
       </div>
 
-      <div v-for="post in posts" :key="post.id" class="home-layout__posts__post">
+      <div v-for="post in posts" :key="post.id" @click="router.push(`/post/${post.id}`)" class="home-layout__posts__post">
         <div class="home-layout__posts__post-header">
           <router-link to="/profile">
             <Avatar :label="post.email[0].toUpperCase()" class="mr-2" size="normal" style="background-color: #6ee7b7; 
@@ -53,16 +53,18 @@
 
 <script setup>
 import { usePostsStore } from "@/store/posts";
-import { formatDateAndHour } from "@/utils/utils";
+import { formatDateAndHour, isImage } from "@/utils/utils";
 import { FileUpload, FloatLabel, Textarea, Button, useToast, ScrollPanel, ScrollTop } from 'primevue';
 import { Avatar } from "primevue";
 import { computed, onMounted, ref } from "vue";
 import IconFile from "@/icons/IconFile.vue";
 import IconChevronUp from "@/icons/IconChevronUp.vue";
 import { Skeleton } from "primevue";
+import { useRouter } from "vue-router";
 
 const postsStore = usePostsStore();
 const toast = useToast();
+const router = useRouter();
 
 const posts = ref([]);
 const content = ref('');
@@ -106,17 +108,10 @@ async function handleSubmit() {
   }
 }
 
-const isImage = (post) => {
-  return post.file_url && post.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/);
-};
-
 </script>
 
 <style lang="scss" scoped>
 .home-layout {
-  display: flex;
-  gap: 2rem;
-
   &__posts {
     padding: 1rem;
     height: 100vh;
@@ -140,6 +135,9 @@ const isImage = (post) => {
     }
 
     &__post {
+      color: #fff;
+      text-decoration: none;
+
       padding: 0.75rem;
 
       border: 1px solid #27272a;

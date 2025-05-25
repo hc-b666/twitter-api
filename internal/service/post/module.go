@@ -16,8 +16,8 @@ func NewService(postRepo *post.Repo) *Service {
 	}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]*post.GetAllPostsDTO, error) {
-	posts, err := s.postRepo.GetAll(ctx)
+func (s *Service) GetAll(ctx context.Context, limit, offset int) ([]*post.GetAllPostsDTO, error) {
+	posts, err := s.postRepo.GetAll(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
@@ -25,7 +25,7 @@ func (s *Service) GetAll(ctx context.Context) ([]*post.GetAllPostsDTO, error) {
 	return posts, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, id int) (*post.PostInfo, error) {
+func (s *Service) GetByID(ctx context.Context, id int) (*post.GetAllPostsDTO, error) {
 	p, err := s.postRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
@@ -69,13 +69,13 @@ func (s *Service) UpdatePost(
 
 	return p, nil
 }
-func (s *Service) SoftDeletePost(ctx context.Context, id int) (string, error) {
+func (s *Service) SoftDeletePost(ctx context.Context, id int) error {
 	err := s.postRepo.SoftDelete(ctx, id)
 	if err != nil {
-		return "", fmt.Errorf("err: %w", err)
+		return fmt.Errorf("err: %w", err)
 	}
 
-	return "post is removed successfully", nil
+	return nil
 }
 func (s *Service) HardDeletePost(ctx context.Context, id int) (string, error) {
 	err := s.postRepo.HardDelete(ctx, id)
@@ -102,4 +102,13 @@ func (s *Service) UpdatePostFileURL(ctx context.Context, postID int, fileURL str
 	}
 
 	return nil
+}
+
+func (s *Service) IsAuthor(ctx context.Context, postID, userID int) (bool, error) {
+	isAuthor, err := s.postRepo.IsAuthor(ctx, postID, userID)
+	if err != nil {
+		return false, fmt.Errorf("err: %w", err)
+	}
+
+	return isAuthor, nil
 }

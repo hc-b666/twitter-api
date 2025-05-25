@@ -25,13 +25,42 @@ func NewHandler(
 }
 
 func (h *Handler) CreateNewComment(c *gin.Context) {
+	userIDStr, ok := c.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := userIDStr.(int)
+	if !ok {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	postIDStr, ok := c.Params.Get("postID")
+	if !ok {
+		h.l.Error("post ID not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "post ID is required"})
+		return
+	}
+
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		h.l.Error("post ID is not an integer")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "post ID is invalid"})
+		return
+	}
+
 	var commentDTO commentRepo.CommentDTO
 	if err := c.ShouldBindJSON(&commentDTO); err != nil {
+		h.l.Error("failed to bind JSON to commentDTO", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	_, err := h.commentSvc.CreateComment(c.Request.Context(), &commentDTO)
+	_, err = h.commentSvc.CreateComment(c.Request.Context(), userID, postID, &commentDTO)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create comment"})
 		return
@@ -64,6 +93,7 @@ func (h *Handler) CommentInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, comment)
 }
+
 func (h *Handler) UpdateExistingComment(c *gin.Context) {
 	commentIDStr, ok := c.Params.Get("commentID")
 	if !ok {
@@ -72,12 +102,6 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 		return
 	}
 
-	content := c.PostForm("content")
-	if content == "" {
-		h.l.Error("content is required")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
-		return
-	}
 	commentID, err := strconv.Atoi(commentIDStr)
 	if err != nil {
 		h.l.Error("comment with this ID not found")
@@ -85,16 +109,52 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 		return
 	}
 
-	comment, err := h.commentSvc.UpdateComment(c.Request.Context(), commentID, content)
+	var commentDTO commentRepo.CommentDTO
+	if err := c.ShouldBindJSON(&commentDTO); err != nil {
+		h.l.Error("failed to bind JSON to commentDTO", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	userIDStr, ok := c.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := userIDStr.(int)
+	if !ok {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Check if the user is the author of the comment
+	isAuthor, err := h.commentSvc.IsAuthor(c.Request.Context(), userID, commentID)
+	if err != nil {
+		h.l.Error("failed to check if user is author", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check author"})
+		return
+	}
+
+	if !isAuthor {
+		h.l.Error("user is not the author of the comment")
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the author of this comment"})
+		return
+	}
+
+	err = h.commentSvc.UpdateComment(c.Request.Context(), commentID, commentDTO.Content)
 	if err != nil {
 		h.l.Error("failed to update comment by ID", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post"})
 		return
 	}
 
-	c.JSON(http.StatusOK, comment)
+	c.JSON(http.StatusOK, gin.H{"message": "comment updated successfully"})
 }
-func (h *Handler) GetAllCommentsTOPosts(c *gin.Context) {
+
+func (h *Handler) GetAllCommentsByPostID(c *gin.Context) {
 	postIDStr, ok := c.Params.Get("postID")
 	if !ok {
 		h.l.Error("post with this ID not found")
@@ -109,7 +169,7 @@ func (h *Handler) GetAllCommentsTOPosts(c *gin.Context) {
 		return
 	}
 
-	comments, err := h.commentSvc.GetALlPostComments(c.Request.Context(), postID)
+	comments, err := h.commentSvc.GetAllPostComments(c.Request.Context(), postID)
 	if err != nil {
 		h.l.Error("failed to get post comment", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to post comments"})
@@ -129,6 +189,7 @@ func (h *Handler) GetAllComments(c *gin.Context) {
 
 	c.JSON(http.StatusOK, comments)
 }
+
 func (h *Handler) SoftDeleteComment(c *gin.Context) {
 	commentIDStr, ok := c.Params.Get("commentID")
 	if !ok {
@@ -144,14 +205,42 @@ func (h *Handler) SoftDeleteComment(c *gin.Context) {
 		return
 	}
 
-	comment, err := h.commentSvc.SoftDeleteComment(c.Request.Context(), commentID)
-	if err != nil {
-		h.l.Error("failed to get post comment", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to post comments"})
+	userIDStr, ok := c.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	c.JSON(http.StatusOK, comment)
+	userID, ok := userIDStr.(int)
+	if !ok {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Check if the user is the author of the comment
+	isAuthor, err := h.commentSvc.IsAuthor(c.Request.Context(), userID, commentID)
+	if err != nil {
+		h.l.Error("failed to check if user is author", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check author"})
+		return
+	}
+
+	if !isAuthor {
+		h.l.Error("user is not the author of the comment")
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the author of this comment"})
+		return
+	}
+
+	err = h.commentSvc.SoftDeleteComment(c.Request.Context(), commentID)
+	if err != nil {
+		h.l.Error("failed to get delete comment", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete comment"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "comment deleted successfully"})
 }
 func (h *Handler) HardDeleteComment(c *gin.Context) {
 	commentIDStr, ok := c.Params.Get("commentID")
@@ -176,4 +265,29 @@ func (h *Handler) HardDeleteComment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+func (h *Handler) GetUserComments(c *gin.Context) {
+	userIDStr, ok := c.Params.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is required"})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is invalid"})
+		return
+	}
+
+	comments, err := h.commentSvc.GetUserComments(c.Request.Context(), userID)
+	if err != nil {
+		h.l.Error("failed to get user comments", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user comments"})
+		return
+	}
+
+	c.JSON(http.StatusOK, comments)
 }

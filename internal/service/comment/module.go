@@ -25,20 +25,13 @@ func (s *Service) GetByID(ctx context.Context, id int) (*comment.CommentInfo, er
 	return u, nil
 }
 
-func (s *Service) GetUserComments(ctx context.Context, commentDTO *comment.CommentDTO) (*comment.Comment, error) {
-	u, err := s.commentRepo.GetByUserID(ctx, commentDTO.UserId)
-	if err != nil {
-		return nil, fmt.Errorf("err: %w", err)
-	}
-
-	return u, nil
-}
-
 func (s *Service) CreateComment(
 	ctx context.Context,
+	userID int,
+	postID int,
 	commentDTO *comment.CommentDTO,
 ) (int, error) {
-	id, err := s.commentRepo.Create(ctx, commentDTO)
+	id, err := s.commentRepo.Create(ctx, userID, postID, commentDTO)
 	if err != nil {
 		return 0, fmt.Errorf("err: %w", err)
 	}
@@ -46,16 +39,15 @@ func (s *Service) CreateComment(
 	return id, nil
 }
 
-func (s *Service) SoftDeleteComment(ctx context.Context, id int) (string, error) {
+func (s *Service) SoftDeleteComment(ctx context.Context, id int) error {
 	err := s.commentRepo.SoftDelete(ctx, id)
-
 	if err != nil {
-		return "", fmt.Errorf("err: %w", err)
+		return fmt.Errorf("err: %w", err)
 	}
 
-	msg := " comment successfully deleted"
-	return msg, nil
+	return nil
 }
+
 func (s *Service) HardDeleteComment(ctx context.Context, id int) error {
 	err := s.commentRepo.HardDelete(ctx, id)
 	if err != nil {
@@ -65,15 +57,16 @@ func (s *Service) HardDeleteComment(ctx context.Context, id int) error {
 	return nil
 }
 
-func (s *Service) UpdateComment(ctx context.Context, id int, content string) (*comment.CommentInfo, error) {
-	commentInfo, err := s.commentRepo.Update(ctx, id, content)
+func (s *Service) UpdateComment(ctx context.Context, id int, content string) error {
+	err := s.commentRepo.Update(ctx, id, content)
 	if err != nil {
-		return nil, fmt.Errorf("err: %w", err)
+		return fmt.Errorf("err: %w", err)
 	}
-	return commentInfo, nil
+
+	return nil
 }
 
-func (s *Service) GetALlPostComments(
+func (s *Service) GetAllPostComments(
 	ctx context.Context,
 	postId int) ([]*comment.GetAllCommentsDTO, error) {
 	comments, err := s.commentRepo.GetAllCommentsToPost(ctx, postId)
@@ -87,6 +80,24 @@ func (s *Service) GetALlPostComments(
 func (s *Service) GetALlCommentsByAdmin(
 	ctx context.Context) ([]*comment.Comment, error) {
 	comments, err := s.commentRepo.GetAllComments(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("err: %w", err)
+	}
+
+	return comments, nil
+}
+
+func (s *Service) IsAuthor(ctx context.Context, userID, commentID int) (bool, error) {
+	isAuthor, err := s.commentRepo.IsAuthor(ctx, userID, commentID)
+	if err != nil {
+		return false, fmt.Errorf("err: %w", err)
+	}
+
+	return isAuthor, nil
+}
+
+func (s *Service) GetUserComments(ctx context.Context, userID int) ([]*comment.UserComment, error) {
+	comments, err := s.commentRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}

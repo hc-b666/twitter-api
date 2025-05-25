@@ -84,6 +84,7 @@ func (s *Server) Init() {
 	// User routes
 	userGroup := group.Group(userURL)
 	userGroup.Use(s.mw.Authenticate())
+	userGroup.GET("/:userID", s.userHandler.GetUserByID)
 	userGroup.GET("/profile", s.userHandler.Profile)
 
 	// Post routes
@@ -99,17 +100,18 @@ func (s *Server) Init() {
 	// Comment routes
 	commentGroup := group.Group(commentURL)
 	commentGroup.Use(s.mw.Authenticate())
-	commentGroup.POST("", s.commentHandler.CreateNewComment)
+	commentGroup.GET("/:postID", s.commentHandler.GetAllCommentsByPostID)
+	commentGroup.GET("/u/:userID", s.commentHandler.GetUserComments)
+	commentGroup.POST("/:postID", s.commentHandler.CreateNewComment)
 	commentGroup.PUT("/:commentID", s.commentHandler.UpdateExistingComment)
-	commentGroup.POST("/:commentID", s.commentHandler.SoftDeleteComment)
-	commentGroup.GET("/:postID", s.commentHandler.GetAllCommentsTOPosts)
+	commentGroup.POST("/delete/:commentID", s.commentHandler.SoftDeleteComment)
+
 	// Admin routes
 	adminGroup := group.Group(adminURL)
 	adminGroup.Use(s.mw.Authenticate())
 	adminGroup.Use(s.mw.Authorize([]types.UserRole{types.Admin}))
 	adminGroup.GET("/users", s.userHandler.GetAllUsers)
-	adminGroup.DELETE("/:commentID", s.commentHandler.HardDeleteComment)
+	adminGroup.DELETE("/comment/:commentID", s.commentHandler.HardDeleteComment)
 	adminGroup.GET("/comments", s.commentHandler.GetAllComments)
-	adminGroup.DELETE("/:postID", s.postHandler.HardDeleteByID)
-
+	adminGroup.DELETE("/post/:postID", s.postHandler.HardDeleteByID)
 }

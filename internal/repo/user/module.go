@@ -21,11 +21,22 @@ func NewRepo(db *pgxpool.Pool, l *logger.Logger) *Repo {
 	}
 }
 
-func (r *Repo) GetAll(ctx context.Context) ([]*UserProfile, error) {
+func (r *Repo) GetAll(ctx context.Context) ([]*AdminUser, error) {
 	query := `
-		select id, email, role, created_at, updated_at
-		from "user"
-		where deleted_at is null
+		select 
+			u.id, 
+			u.email, 
+			u.role, 
+			u.created_at, 
+			u.updated_at, 
+			u.deleted_at, 
+			count(distinct p.id) as posts_count, 
+			count(distinct c.id) as comments_count
+		from "user" u
+		left join post p on p.user_id = u.id
+		left join comment c on c.user_id = u.id
+		group by u.id, u.email, u.role, u.created_at, u.updated_at, u.deleted_at
+		order by u.created_at desc;
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -34,15 +45,18 @@ func (r *Repo) GetAll(ctx context.Context) ([]*UserProfile, error) {
 	}
 	defer rows.Close()
 
-	var users []*UserProfile
+	var users []*AdminUser
 	for rows.Next() {
-		user := &UserProfile{}
+		user := &AdminUser{}
 		err := rows.Scan(
 			&user.ID,
 			&user.Email,
 			&user.Role,
 			&user.CreatedAt,
 			&user.UpdatedAt,
+			&user.DeletedAt,
+			&user.PostsCount,
+			&user.CommentsCount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)

@@ -21,7 +21,7 @@ func NewService(userRepo *user.Repo, l *logger.Logger) *Service {
 	}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]*user.UserProfile, error) {
+func (s *Service) GetAll(ctx context.Context) ([]*user.AdminUser, error) {
 	users, err := s.userRepo.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
