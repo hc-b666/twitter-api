@@ -181,3 +181,33 @@ func (r *Repo) Update(ctx context.Context, id int, content, fileURL string) (*Po
 
 	return post, nil
 }
+
+func (r *Repo) UpdateContent(ctx context.Context, id int, content string) error {
+	query := `
+		update post
+		set content = $1, updated_at = now()
+		where id = $2
+	`
+
+	_, err := r.db.Exec(ctx, query, content, id)
+	if err != nil {
+		return fmt.Errorf("failed to update post content: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repo) UpdateFileURL(ctx context.Context, id int, fileURL string) error {
+	query := `
+		update post
+		set file_url = $1, updated_at = now()
+		where id = $2
+	`
+
+	_, err := r.db.Exec(ctx, query, fileURL, id)
+	if err != nil {
+		return fmt.Errorf("failed to update post file URL: %w", err)
+	}
+
+	return nil
+}

@@ -185,59 +185,59 @@ func (h *Handler) UpdateExistingPost(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("file")
-	var fileURL string
-
-	if err == nil {
-		src, err := file.Open()
-		if err != nil {
-			h.l.Error("failed to open file", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
-			return
-		}
-		defer func() {
-			if cerr := src.Close(); cerr != nil {
-				h.l.Error("failed to close file", cerr)
-				return
-			}
-		}()
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*60*time.Second)
-		defer cancel()
-
-		uploadSvc := upload.NewService(h.ucareClient)
-
-		params := upload.FileParams{
-			Data: src,
-			Name: file.Filename,
-		}
-
-		fileID, err := uploadSvc.File(ctx, params)
-		if err != nil {
-			h.l.Error("failed to upload file", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload file"})
-			return
-		}
-
-		fileURL = "https://ucarecdn.com/" + fileID + "/" + file.Filename
-	} else { // if file is already uploaded and new image is not selected you should check this part
-		post, getErr := h.postSvc.GetByID(c.Request.Context(), postID)
-		if getErr != nil {
-			h.l.Error("failed to get post by ID", getErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post by ID"})
-			return
-		}
-		fileURL = post.FileURL
-	}
-
-	_, err = h.postSvc.UpdatePost(c.Request.Context(), postID, content, fileURL)
+	err = h.postSvc.UpdatePostContent(c.Request.Context(), postID, content)
 	if err != nil {
-		h.l.Error("failed to update post", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update post"})
+		h.l.Error("failed to update post content", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "new post is created successfully"})
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "post updated successfully"})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		h.l.Error("failed to open file", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
+		return
+	}
+	defer func() {
+		if cerr := src.Close(); cerr != nil {
+			h.l.Error("failed to close file", cerr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close file"})
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*60*time.Second)
+	defer cancel()
+
+	uploadSvc := upload.NewService(h.ucareClient)
+
+	params := upload.FileParams{
+		Data: src,
+		Name: file.Filename,
+	}
+
+	fileID, err := uploadSvc.File(ctx, params)
+	if err != nil {
+		h.l.Error("failed to upload file", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload file"})
+		return
+	}
+
+	fileURL := "https://ucarecdn.com/" + fileID + "/" + file.Filename
+
+	err = h.postSvc.UpdatePostFileURL(c.Request.Context(), postID, fileURL)
+	if err != nil {
+		h.l.Error("failed to update post file URL", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update post file URL"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "post updated successfully"})
 }
 
 func (h *Handler) SoftDeleteByID(c *gin.Context) {

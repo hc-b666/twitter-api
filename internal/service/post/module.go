@@ -85,3 +85,21 @@ func (s *Service) HardDeletePost(ctx context.Context, id int) (string, error) {
 
 	return "post is deleted successfully", nil
 }
+
+func (s *Service) UpdatePostContent(ctx context.Context, postID int, content string) error {
+	err := s.postRepo.UpdateContent(ctx, postID, content)
+	if err != nil {
+		return fmt.Errorf("err: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) UpdatePostFileURL(ctx context.Context, postID int, fileURL string) error {
+	err := s.postRepo.UpdateFileURL(ctx, postID, fileURL)
+	if err != nil {
+		return fmt.Errorf("err: %w", err)
+	}
+
+	return nil
+}
