@@ -109,8 +109,8 @@ func (s *Server) Init() {
 	adminGroup.Use(s.mw.Authenticate())
 	adminGroup.Use(s.mw.Authorize([]types.UserRole{types.Admin}))
 	adminGroup.GET("/users", s.userHandler.GetAllUsers)
-	adminGroup.DELETE("/:commentID", s.commentHandler.HardDeleteComment)
+	adminGroup.DELETE("/comment/:commentID", s.commentHandler.HardDeleteComment)
 	adminGroup.GET("/comments", s.commentHandler.GetAllComments)
-	adminGroup.DELETE("/:postID", s.postHandler.HardDeleteByID)
+	adminGroup.DELETE("/post/:postID", s.postHandler.HardDeleteByID)
 
 }

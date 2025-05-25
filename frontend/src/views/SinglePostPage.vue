@@ -1,6 +1,6 @@
 <template>
   <div class="post">
-    <Button @click="$router.push('/')" class="mb-4">
+    <Button @click="$router.push('/')" class="mb-4 self-start">
       <icon-chevron-left />
       Go Back
     </Button>
@@ -25,7 +25,7 @@
     </div>
 
     <form @submit.prevent="handleSubmit" class="post-comment-form">
-      <h3>Create Comment</h3>
+      <h4>Create Comment</h4>
       <FloatLabel variant="on">
         <Textarea v-model="commentContent" id="content" type="text" autoResize />
         <label for="content">Content</label>
@@ -35,11 +35,11 @@
 
     <div class="post-comments">
       <div v-for="(comment, idx) in comments" :key="comment.id" class="post-comments__comment">
-        <div class="post-comment-header">
+        <div class="post-comments__comment-header">
           <Avatar :label="comment.email[0].toUpperCase()" class="mr-2" size="normal" style="background-color: #6ee7b7; 
-            color: #000" shape="circle" />
+              color: #000" shape="circle" />
           <span>{{ comment.email }}</span>
-          <span>{{ formatDateAndHour(comment.created_at) }}</span>
+          <span style="margin-left: auto; font-size: 12px;">{{ formatDateAndHour(comment.created_at) }}</span>
 
           <Button v-if="user?.id === comment.user_id" type="button" @click="toggle($event, idx)" aria-haspopup="true"
             :aria-controls="`overlay_menu_${idx}`" class="menu-button">
@@ -51,13 +51,27 @@
         <p>{{ comment.content }}</p>
       </div>
     </div>
+
+    <Dialog v-model:visible="editDialog" modal header="Edit comment" :style="{ width: '25rem' }">
+      <span class="text-surface-500 dark:text-surface-400 block mb-8">Update your comment</span>
+      <div class="flex items-center gap-4 mb-4">
+        <label for="content" class="font-semibold w-24">Content</label>
+        <InputText v-model="editCommentContent" id="content" class="flex-auto" autocomplete="off" />
+      </div>
+
+      <div style="margin-top: 8px;" class="flex justify-end gap-2">
+        <Button type="button" label="Cancel" severity="secondary" @click="editDialog = false"></Button>
+        <Button type="button" label="Save" @click="handleEdit"></Button>
+      </div>
+    </Dialog>
+
   </div>
 </template>
 
 <script setup>
 import { usePostsStore } from '@/store/posts';
 import { formatDateAndHour, isImage } from '@/utils/utils';
-import { Avatar, FloatLabel, Textarea, useToast, Button, Menu } from 'primevue';
+import { Avatar, FloatLabel, Textarea, useToast, Button, Menu, Dialog, InputText } from 'primevue';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import IconFile from "@/icons/IconFile.vue";
@@ -76,7 +90,10 @@ const postId = route.params.postId;
 const post = ref(null);
 const comments = ref([]);
 const commentContent = ref('');
+const editCommentContent = ref('');
 const menuRefs = ref({});
+const editDialog = ref(false);
+const selectedComment = ref(null);
 
 const user = computed(() => authStore.getUser);
 
@@ -119,6 +136,42 @@ async function handleSubmit() {
   }
 }
 
+async function handleEdit() {
+  try {
+    const res = await commentsStore.updateComment(selectedComment.value.id, { content: editCommentContent.value });
+    if (res) {
+      comments.value = await commentsStore.getCommentsByPostId(postId);
+      editCommentContent.value = '';
+      selectedComment.value = null;
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Comment edited successfully.',
+        life: 3000
+      });
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to edit comment.',
+        life: 3000
+      });
+      return;
+    }
+  } catch (err) {
+    console.error('Error editing comment:', err);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to edit comment.',
+      life: 3000
+    });
+    return;
+  }
+
+  editDialog.value = false;
+}
+
 function setMenuRef(el, idx) {
   if (el) {
     menuRefs.value[idx] = el;
@@ -134,7 +187,9 @@ function getMenuItems(post, idx) {
           label: 'Edit',
           icon: 'pi pi-pencil',
           command: () => {
-            console.log('edit clicked for post:', post.id);
+            editDialog.value = true;
+            selectedComment.value = comments.value[idx];
+            editCommentContent.value = selectedComment.value.content;
           }
         },
         {
@@ -255,6 +310,11 @@ function toggle(event, idx) {
   }
 
   &-comment-form {
+    padding: 0.5rem 0;
+
+    border-top: 1px solid #27272a;
+    border-bottom: 1px solid #27272a;
+
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -267,6 +327,22 @@ function toggle(event, idx) {
   &-comments {
     display: flex;
     flex-direction: column;
+
+    &__comment {
+      padding: 0.5rem;
+
+      border: 1px solid #27272a;
+
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      &-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
   }
 }
 </style>

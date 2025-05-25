@@ -102,12 +102,6 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 		return
 	}
 
-	content := c.PostForm("content")
-	if content == "" {
-		h.l.Error("content is required")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
-		return
-	}
 	commentID, err := strconv.Atoi(commentIDStr)
 	if err != nil {
 		h.l.Error("comment with this ID not found")
@@ -115,14 +109,49 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 		return
 	}
 
-	comment, err := h.commentSvc.UpdateComment(c.Request.Context(), commentID, content)
+	var commentDTO commentRepo.CommentDTO
+	if err := c.ShouldBindJSON(&commentDTO); err != nil {
+		h.l.Error("failed to bind JSON to commentDTO", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	userIDStr, ok := c.Get("userID")
+	if !ok {
+		h.l.Error("user ID not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := userIDStr.(int)
+	if !ok {
+		h.l.Error("user ID is not an integer")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Check if the user is the author of the comment
+	isAuthor, err := h.commentSvc.IsAuthor(c.Request.Context(), userID, commentID)
+	if err != nil {
+		h.l.Error("failed to check if user is author", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check author"})
+		return
+	}
+
+	if !isAuthor {
+		h.l.Error("user is not the author of the comment")
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the author of this comment"})
+		return
+	}
+
+	err = h.commentSvc.UpdateComment(c.Request.Context(), commentID, commentDTO.Content)
 	if err != nil {
 		h.l.Error("failed to update comment by ID", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get post"})
 		return
 	}
 
-	c.JSON(http.StatusOK, comment)
+	c.JSON(http.StatusOK, gin.H{"message": "comment updated successfully"})
 }
 
 func (h *Handler) GetAllCommentsByPostID(c *gin.Context) {

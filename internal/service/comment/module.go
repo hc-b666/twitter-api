@@ -57,12 +57,13 @@ func (s *Service) HardDeleteComment(ctx context.Context, id int) error {
 	return nil
 }
 
-func (s *Service) UpdateComment(ctx context.Context, id int, content string) (*comment.CommentInfo, error) {
-	commentInfo, err := s.commentRepo.Update(ctx, id, content)
+func (s *Service) UpdateComment(ctx context.Context, id int, content string) error {
+	err := s.commentRepo.Update(ctx, id, content)
 	if err != nil {
-		return nil, fmt.Errorf("err: %w", err)
+		return fmt.Errorf("err: %w", err)
 	}
-	return commentInfo, nil
+
+	return nil
 }
 
 func (s *Service) GetAllPostComments(

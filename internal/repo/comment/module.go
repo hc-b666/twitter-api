@@ -111,24 +111,19 @@ func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *Repo) Update(ctx context.Context, id int, content string) (*CommentInfo, error) {
-	query := `update comment
-		set content=$1, updated_at=now()
-		where id = $2;`
-	comment := &CommentInfo{}
-	err := r.db.QueryRow(ctx, query, content, id).Scan(
-		&comment.ID,
-		&comment.UserId,
-		&comment.PostId,
-		&comment.Content,
-		&comment.CreatedAt,
-		&comment.UpdatedAt,
-	)
+func (r *Repo) Update(ctx context.Context, id int, content string) error {
+	query := `
+		update comment
+		set content = $1, updated_at = now()
+		where id = $2;
+	`
+
+	_, err := r.db.Exec(ctx, query, content, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update comment by id: %w", err)
+		return fmt.Errorf("failed to update comment by id: %w", err)
 	}
 
-	return comment, nil
+	return nil
 }
 
 func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllCommentsDTO, error) {

@@ -49,6 +49,20 @@ export const useCommentsStore = defineStore("comments", {
       } finally {
         this.loading = false;
       }
-    }
+    },
+
+    async updateComment(commentId, body) {
+      this.loading = true;
+
+      try {
+        const res = await axios.put(`/comments/${commentId}`, body);
+        return res.data;
+      } catch (err) {
+        console.error("update comment", err);
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 });
