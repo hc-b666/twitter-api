@@ -56,3 +56,32 @@ func (s *Service) CreatePost(
 
 	return id, nil
 }
+func (s *Service) UpdatePost(
+	ctx context.Context,
+	postID int,
+	content string,
+	fileURL string,
+) (*post.PostInfo, error) {
+	p, err := s.postRepo.Update(ctx, postID, content, fileURL)
+	if err != nil {
+		return nil, fmt.Errorf("err: %w", err)
+	}
+
+	return p, nil
+}
+func (s *Service) SoftDeletePost(ctx context.Context, id int) (string, error) {
+	err := s.postRepo.SoftDelete(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("err: %w", err)
+	}
+
+	return "post is removed successfully", nil
+}
+func (s *Service) HardDeletePost(ctx context.Context, id int) (string, error) {
+	err := s.postRepo.HardDelete(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("err: %w", err)
+	}
+
+	return "post is deleted successfully", nil
+}

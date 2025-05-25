@@ -95,9 +95,10 @@ func (r *Repo) SoftDelete(ctx context.Context, id int) error {
 
 	return nil
 }
+
 func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from comment
-				id = $1;`
+			where id = $1;`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(&id)
 	if err != nil {
@@ -106,6 +107,7 @@ func (r *Repo) HardDelete(ctx context.Context, id int) error {
 
 	return nil
 }
+
 func (r *Repo) Update(ctx context.Context, id int, content string) (*CommentInfo, error) {
 	query := `update comment
 		set content=$1, updated_at=now()
@@ -164,6 +166,7 @@ func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllC
 
 	return comments, nil
 }
+
 func (r *Repo) GetAllComments(ctx context.Context) ([]*Comment, error) {
 	query := `
 		select id, user_id, post_id,content, created_at, updated_at, deleted_at	

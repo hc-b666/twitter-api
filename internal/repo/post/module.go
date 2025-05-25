@@ -2,6 +2,7 @@ package post
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -136,4 +137,47 @@ func (r *Repo) Create(ctx context.Context, userID int, content, fileURL string) 
 	}
 
 	return id, nil
+}
+func (r *Repo) SoftDelete(ctx context.Context, id int) error {
+	query := `update post
+       	set deleted_at=now()
+		where id = $1;`
+
+	err := r.db.QueryRow(ctx, query, id)
+
+	if err != nil {
+		return errors.New("failed to delete post by id")
+	}
+
+	return nil
+}
+func (r *Repo) HardDelete(ctx context.Context, id int) error {
+	query := `delete from post
+    			where id = $1;`
+
+	err := r.db.QueryRow(ctx, query, id)
+	if err != nil {
+		return errors.New("failed to delete comment by id")
+	}
+
+	return nil
+}
+func (r *Repo) Update(ctx context.Context, id int, content, fileURL string) (*PostInfo, error) {
+	query := `update post
+		set content=$1, file_url=$2, updated_at=now()
+		where id = $3;`
+	post := &PostInfo{}
+	err := r.db.QueryRow(ctx, query, content, fileURL, id).Scan(
+		&post.ID,
+		&post.UserId,
+		&post.Content,
+		&post.FileURL,
+		&post.CreatedAt,
+		&post.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update post by id: %w", err)
+	}
+
+	return post, nil
 }
