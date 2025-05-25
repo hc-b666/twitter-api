@@ -1,5 +1,6 @@
 <template>
   <main class="profile-layout">
+
     <div>
       <h1>Profile</h1>
       <div v-if="loading">Loading profile...</div>
@@ -11,10 +12,11 @@
     </div>
 
     <div class="profile-layout__posts">
-      <div v-for="(post, idx) in posts" :key="post.id" class="profile-layout__posts__post">
+
+      <div v-for="(post, idx) in posts" @click="router.push(`/post/${post.id}`)" :key="post.id" class="profile-layout__posts__post">
         <div class="profile-layout__posts__post-header">
           <span>{{ formatDateAndHour(post.created_at) }}</span>
-          <Button type="button" @click="toggle($event, idx)" aria-haspopup="true" :aria-controls="`overlay_menu_${idx}`"
+          <Button type="button" @click.stop="toggle($event, idx)" aria-haspopup="true" :aria-controls="`overlay_menu_${idx}`"
             class="menu-button">
             <icon-ellipsis style="color: #fff" />
           </Button>
@@ -32,7 +34,25 @@
           </a>
         </div>
       </div>
+
     </div>
+
+    <Dialog v-model:visible="editDialog" modal header="Edit Post" :style="{ width: '25rem' }">
+      <span class="text-surface-500 dark:text-surface-400 block mb-8">Update your post</span>
+      <div class="flex items-center gap-4 mb-4" style="margin-bottom: 8px;">
+        <label for="content" class="font-semibold w-24">Content</label>
+        <InputText v-model="editPostContent" id="content" class="flex-auto" autocomplete="off" />
+      </div>
+
+      <FileUpload ref="fileupload" mode="basic" :maxFileSize="100000000" @select="onSelect" chooseLabel="Browse"
+        style="width: 100%;" />
+
+      <div style="margin-top: 8px;" class="flex justify-end gap-2">
+        <Button type="button" label="Cancel" severity="secondary" @click="editDialog = false"></Button>
+        <Button type="button" label="Save" @click="handleEdit"></Button>
+      </div>
+    </Dialog>
+
   </main>
 </template>
 
@@ -47,6 +67,7 @@ import { usePostsStore } from "@/store/posts";
 import { formatDateAndHour, isImage } from "@/utils/utils";
 import IconFile from "@/icons/IconFile.vue";
 import IconEllipsis from "@/icons/IconEllipsis.vue";
+import { Dialog, FileUpload, InputText } from "primevue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -58,6 +79,11 @@ const user = computed(() => authStore.getUser);
 const loading = computed(() => authStore.loading);
 
 const menuRefs = ref({});
+const editDialog = ref(false);
+const editPostContent = ref('');
+const selectedPost = ref(null);
+const fileupload = ref();
+const file = ref(null);
 
 onMounted(async () => {
   if (!user.value) {
@@ -69,6 +95,10 @@ onMounted(async () => {
   }
 });
 
+function onSelect(e) {
+  file.value = e.files[0];
+}
+
 function handleLogout() {
   authStore.logout();
   router.push("/login");
@@ -78,6 +108,55 @@ function handleLogout() {
     detail: "Successfully logged out!",
     life: 3000,
   });
+}
+
+async function handleEdit() {
+  if (!editPostContent.value.trim()) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Post content cannot be empty.',
+      life: 3000
+    });
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('content', editPostContent.value);
+  if (file.value) {
+    formData.append('file', file.value);
+  }
+
+  try {
+    const res = await postsStore.updatePost(selectedPost.value.id, formData);
+    if (res) {
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Post updated successfully.',
+        life: 3000
+      });
+      editDialog.value = false;
+      posts.value = posts.value.map(p => p.id === selectedPost.value.id ? { ...p, content: editPostContent.value, file_url: res.file_url } : p);
+      editPostContent.value = '';
+      fileupload.value.clear();
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to update post.',
+        life: 3000
+      });
+    }
+  } catch (err) {
+    console.error('Error updating post:', err);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to update post.',
+      life: 3000
+    });
+  }
 }
 
 function setMenuRef(el, idx) {
@@ -95,14 +174,38 @@ function getMenuItems(post, idx) {
           label: 'Edit',
           icon: 'pi pi-pencil',
           command: () => {
-            console.log('edit clicked for post:', post.id);
+            editPostContent.value = post.content;
+            editDialog.value = true;
+            selectedPost.value = post;
           }
         },
         {
           label: 'Delete',
           icon: 'pi pi-trash',
-          command: () => {
-            console.log('delete clicked for post:', post.id);
+          command: async () => {
+
+            console.log(post.id)
+            try {
+              const res = await postsStore.deletePost(post.id);
+              console.log(res);
+              if (res) {
+                toast.add({
+                  severity: 'success',
+                  summary: 'Success',
+                  detail: 'Post deleted successfully.',
+                  life: 3000
+                });
+              }
+              posts.value = posts.value.filter(p => p.id !== post.id);
+            } catch (err) {
+              console.error('Error deleting post:', err);
+              toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to delete post.',
+                life: 3000
+              });
+            }
           },
         }
       ],

@@ -22,6 +22,7 @@ func (r *Repo) GetAll(ctx context.Context) ([]*GetAllPostsDTO, error) {
 		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
 		from post p
 		join "user" u on p.user_id = u.id
+		where p.deleted_at is null
  		order by created_at desc;
 	`
 
@@ -61,7 +62,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error) {
 		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
 		from post p
 		join "user" u on p.user_id = u.id
-		where p.id = $1;
+		where p.id = $1 and p.deleted_at is null;
 	`
 
 	post := &GetAllPostsDTO{}
@@ -85,7 +86,7 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error)
 	query := `
 		select id, user_id, content, file_url, created_at, updated_at
 		from post
-		where user_id = $1
+		where user_id = $1 and deleted_at is null
 		order by created_at desc;
 	`
 
@@ -140,19 +141,22 @@ func (r *Repo) Create(ctx context.Context, userID int, content, fileURL string) 
 
 	return id, nil
 }
+
 func (r *Repo) SoftDelete(ctx context.Context, id int) error {
-	query := `update post
-       	set deleted_at=now()
-		where id = $1;`
+	query := `
+		update post
+		set deleted_at = now()
+		where id = $1;
+	`
 
-	err := r.db.QueryRow(ctx, query, id)
-
+	_, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		return errors.New("failed to delete post by id")
+		return fmt.Errorf("failed to soft delete post by id: %w", err)
 	}
 
 	return nil
 }
+
 func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from post
     			where id = $1;`
@@ -212,4 +216,22 @@ func (r *Repo) UpdateFileURL(ctx context.Context, id int, fileURL string) error 
 	}
 
 	return nil
+}
+
+func (r *Repo) IsAuthor(ctx context.Context, postID, userID int) (bool, error) {
+	query := `
+		select exists(
+			select 1
+			from post
+			where id = $1 and user_id = $2
+		);
+	`
+
+	var exists bool
+	err := r.db.QueryRow(ctx, query, postID, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if user is author: %w", err)
+	}
+
+	return exists, nil
 }

@@ -21,7 +21,7 @@
         <Skeleton width="100%" height="16rem" />
       </div>
 
-      <router-link v-for="post in posts" :key="post.id" :to="`/post/${post.id}`" class="home-layout__posts__post">
+      <div v-for="post in posts" :key="post.id" @click="router.push(`/post/${post.id}`)" class="home-layout__posts__post">
         <div class="home-layout__posts__post-header">
           <router-link to="/profile">
             <Avatar :label="post.email[0].toUpperCase()" class="mr-2" size="normal" style="background-color: #6ee7b7; 
@@ -41,7 +41,7 @@
             <span>View the attachment</span>
           </a>
         </div>
-      </router-link>
+      </div>
 
       <ScrollTop target="parent" :threshold="100" :buttonProps="{ raised: true, rounded: true }">
         <icon-chevron-up />
@@ -60,9 +60,11 @@ import { computed, onMounted, ref } from "vue";
 import IconFile from "@/icons/IconFile.vue";
 import IconChevronUp from "@/icons/IconChevronUp.vue";
 import { Skeleton } from "primevue";
+import { useRouter } from "vue-router";
 
 const postsStore = usePostsStore();
 const toast = useToast();
+const router = useRouter();
 
 const posts = ref([]);
 const content = ref('');

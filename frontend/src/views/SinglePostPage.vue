@@ -1,9 +1,11 @@
 <template>
   <div class="post">
-    <Button @click="$router.push('/')" class="mb-4 self-start">
-      <icon-chevron-left />
-      Go Back
-    </Button>
+    <div>
+      <Button @click="$router.go(-1)" class="mb-4 self-start">
+        <icon-chevron-left />
+        Go Back
+      </Button>
+    </div>
 
     <div class="post-header">
       <router-link to="/profile">
@@ -45,7 +47,7 @@
             :aria-controls="`overlay_menu_${idx}`" class="menu-button">
             <icon-ellipsis style="color: #fff" />
           </Button>
-          <Menu :ref="el => setMenuRef(el, idx)" :id="`overlay_menu_${idx}`" :model="getMenuItems(post, idx)"
+          <Menu :ref="el => setMenuRef(el, idx)" :id="`overlay_menu_${idx}`" :model="getMenuItems(comment, idx)"
             :popup="true" />
         </div>
         <p>{{ comment.content }}</p>
@@ -178,7 +180,7 @@ function setMenuRef(el, idx) {
   }
 }
 
-function getMenuItems(post, idx) {
+function getMenuItems(comment, idx) {
   return [
     {
       label: "Options",
@@ -188,8 +190,8 @@ function getMenuItems(post, idx) {
           icon: 'pi pi-pencil',
           command: () => {
             editDialog.value = true;
-            selectedComment.value = comments.value[idx];
-            editCommentContent.value = selectedComment.value.content;
+            selectedComment.value = comment;
+            editCommentContent.value = comment.content;
           }
         },
         {
@@ -197,7 +199,7 @@ function getMenuItems(post, idx) {
           icon: 'pi pi-trash',
           command: async () => {
             try {
-              const res = await commentsStore.softDeleteComment(comments.value[idx].id);
+              const res = await commentsStore.softDeleteComment(comment.id);
               if (res) {
                 toast.add({
                   severity: 'success',
@@ -253,6 +255,12 @@ function toggle(event, idx) {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+
+  flex-grow: 1;
+
+  overflow-y: auto;
+
+  height: 100vh;
 
   &-header {
     display: flex;
