@@ -98,10 +98,15 @@ func (s *Server) Init() {
 	commentGroup := group.Group(commentURL)
 	commentGroup.Use(s.mw.Authenticate())
 	commentGroup.POST("", s.commentHandler.CreateNewComment)
-
+	commentGroup.PUT("/:commentID", s.commentHandler.UpdateExistingComment)
+	commentGroup.POST("/:commentID", s.commentHandler.SoftDeleteComment)
+	commentGroup.GET("/:postID", s.commentHandler.GetAllCommentsTOPosts)
 	// Admin routes
 	adminGroup := group.Group(adminURL)
 	adminGroup.Use(s.mw.Authenticate())
 	adminGroup.Use(s.mw.Authorize([]types.UserRole{types.Admin}))
 	adminGroup.GET("/users", s.userHandler.GetAllUsers)
+	adminGroup.DELETE("/:commentID", s.commentHandler.HardDeleteComment)
+	adminGroup.GET("/comments", s.commentHandler.GetAllComments)
+
 }
