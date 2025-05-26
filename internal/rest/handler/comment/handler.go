@@ -153,6 +153,18 @@ func (h *Handler) UpdateExistingComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "comment updated successfully"})
 }
+func getPageFromQuery(c *gin.Context) int {
+	pageStr := c.Query("page")
+	if pageStr == "" {
+		return 1
+	}
+
+	if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
+		return page
+	}
+
+	return 1
+}
 
 func (h *Handler) GetAllCommentsByPostID(c *gin.Context) {
 	postIDStr, ok := c.Params.Get("postID")
@@ -168,8 +180,12 @@ func (h *Handler) GetAllCommentsByPostID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
 		return
 	}
+	page := getPageFromQuery(c)
 
-	comments, err := h.commentSvc.GetAllPostComments(c.Request.Context(), postID)
+	limit := 10
+	offset := (page - 1) * limit
+	comments, err := h.commentSvc.GetAllPostComments(c.Request.Context(), postID, limit, offset)
+
 	if err != nil {
 		h.l.Error("failed to get post comment", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to post comments"})
@@ -180,7 +196,10 @@ func (h *Handler) GetAllCommentsByPostID(c *gin.Context) {
 }
 
 func (h *Handler) GetAllComments(c *gin.Context) {
-	comments, err := h.commentSvc.GetALlCommentsByAdmin(c.Request.Context())
+	page := getPageFromQuery(c)
+	limit := 10
+	offset := (page - 1) * limit
+	comments, err := h.commentSvc.GetALlCommentsByAdmin(c.Request.Context(), limit, offset)
 	if err != nil {
 		h.l.Error("failed to get all comments", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get all comments"})

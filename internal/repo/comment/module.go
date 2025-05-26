@@ -140,16 +140,17 @@ func (r *Repo) Update(ctx context.Context, id int, content string) error {
 	return nil
 }
 
-func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllCommentsDTO, error) {
+func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId, limit, offset int) ([]*GetAllCommentsDTO, error) {
 	query := `
 		select c.id, c.user_id, c.content, c.created_at, c.updated_at, u.email
 		from comment c 
 		join "user" u on c.user_id = u.id
 		where c.post_id = $1 and c.deleted_at IS NULL
- 		order by created_at desc;
+ 		order by created_at desc
+		limit $2 offset $3;
 	`
 
-	rows, err := r.db.Query(ctx, query, postId)
+	rows, err := r.db.Query(ctx, query, postId, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all comments to posts: %w", err)
 	}
@@ -179,14 +180,15 @@ func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId int) ([]*GetAllC
 	return comments, nil
 }
 
-func (r *Repo) GetAllComments(ctx context.Context) ([]*Comment, error) {
+func (r *Repo) GetAllComments(ctx context.Context, limit, offset int) ([]*Comment, error) {
 	query := `
 		select id, user_id, post_id,content, created_at, updated_at, deleted_at	
 		from comment
-		order by created_at desc;
+		order by created_at desc
+		limit $1 offset $2;
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all comments: %w", err)
 	}

@@ -68,8 +68,8 @@ func (s *Service) UpdateComment(ctx context.Context, id int, content string) err
 
 func (s *Service) GetAllPostComments(
 	ctx context.Context,
-	postId int) ([]*comment.GetAllCommentsDTO, error) {
-	comments, err := s.commentRepo.GetAllCommentsToPost(ctx, postId)
+	postId, limit, offset int) ([]*comment.GetAllCommentsDTO, error) {
+	comments, err := s.commentRepo.GetAllCommentsToPost(ctx, postId, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
@@ -78,8 +78,8 @@ func (s *Service) GetAllPostComments(
 }
 
 func (s *Service) GetALlCommentsByAdmin(
-	ctx context.Context) ([]*comment.Comment, error) {
-	comments, err := s.commentRepo.GetAllComments(ctx)
+	ctx context.Context, limit, offset int) ([]*comment.Comment, error) {
+	comments, err := s.commentRepo.GetAllComments(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("err: %w", err)
 	}
