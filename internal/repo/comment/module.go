@@ -185,7 +185,7 @@ func (r *Repo) GetAllComments(ctx context.Context, limit, offset int) ([]*Commen
 		select id, user_id, post_id,content, created_at, updated_at, deleted_at	
 		from comment
 		order by created_at desc
-		limit $2 offset $3;
+		limit $1 offset $2;
 	`
 
 	rows, err := r.db.Query(ctx, query, limit, offset)
