@@ -32,3 +32,5 @@ go.work
 bin/
 
 app.log
+
+coverage.out.mocks

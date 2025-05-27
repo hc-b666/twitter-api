@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/uploadcare/uploadcare-go/ucare"
 	"go.uber.org/dig"
@@ -73,7 +72,7 @@ func execute(host, port, dsn string) error {
 	}
 
 	deps := []interface{}{
-		func() (*pgxpool.Pool, error) {
+		func() (db.Pool, error) {
 			return db.NewDB(dsn)
 		},
 		gin.New,

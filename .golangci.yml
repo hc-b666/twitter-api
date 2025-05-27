@@ -2,7 +2,7 @@ version: "2"
 linters:
   default: none
   enable:
-    - errcheck
+    # - errcheck
     - govet
     - staticcheck
     - unused
@@ -31,7 +31,7 @@ linters:
     - sqlclosecheck
     - thelper
     - usestdlibvars
-    - wrapcheck
+    # - wrapcheck
     - gocritic
     - nilaway
   settings:

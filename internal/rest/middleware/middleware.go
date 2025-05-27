@@ -4,27 +4,27 @@ import (
 	"net/http"
 	"strings"
 	"twitter-api/internal/service/user"
+	"twitter-api/pkg/db"
 	"twitter-api/pkg/logger"
 	"twitter-api/pkg/types"
 	"twitter-api/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Middleware struct {
-	db      *pgxpool.Pool
+	db      db.Pool
 	userSvc *user.Service
 	l       *logger.Logger
 }
 
 func New(
-	db *pgxpool.Pool,
+	pool db.Pool,
 	userSvc *user.Service,
 	l *logger.Logger,
 ) *Middleware {
 	return &Middleware{
-		db:      db,
+		db:      pool,
 		userSvc: userSvc,
 		l:       l,
 	}

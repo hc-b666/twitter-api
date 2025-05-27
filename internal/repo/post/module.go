@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"twitter-api/pkg/db"
 )
 
 type Repo struct {
-	db *pgxpool.Pool
+	db db.Pool
 }
 
-func NewRepo(db *pgxpool.Pool) *Repo {
+func NewRepo(pool db.Pool) *Repo {
 	return &Repo{
-		db: db,
+		db: pool,
 	}
 }
 
