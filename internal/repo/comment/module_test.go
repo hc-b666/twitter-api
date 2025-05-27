@@ -16,6 +16,7 @@ func TestNewRepo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 }
+
 func TestRepo_Update(t *testing.T) {
 	t.Run("error on create comment", func(t *testing.T) {
 		mockPool := new(db.MockPool)
@@ -44,7 +45,7 @@ func TestRepo_Update(t *testing.T) {
 	})
 }
 
-//func TestRepo_GetTaskByID(t *testing.T) {
+// func TestRepo_GetTaskByID(t *testing.T) {
 //	t.Run("error on get task by id", func(t *testing.T) {
 //		mockPool := new(db.MockPool)
 //		mockRow := new(db.MockRow)
@@ -96,4 +97,4 @@ func TestRepo_Update(t *testing.T) {
 //		assert.NotNil(t, err)
 //		assert.Nil(t, task)
 //	})
-//}
+// }

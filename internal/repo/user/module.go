@@ -3,20 +3,19 @@ package user
 import (
 	"context"
 	"fmt"
+	"twitter-api/pkg/db"
 	"twitter-api/pkg/logger"
 	"twitter-api/pkg/utils"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repo struct {
-	db *pgxpool.Pool
+	db db.Pool
 	l  *logger.Logger
 }
 
-func NewRepo(db *pgxpool.Pool, l *logger.Logger) *Repo {
+func NewRepo(pool db.Pool, l *logger.Logger) *Repo {
 	return &Repo{
-		db: db,
+		db: pool,
 		l:  l,
 	}
 }

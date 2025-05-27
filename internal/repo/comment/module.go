@@ -22,9 +22,9 @@ type repo struct {
 	db db.Pool
 }
 
-func NewRepo(db db.Pool) (Repo, error) {
+func NewRepo(pool db.Pool) (Repo, error) {
 	return &repo{
-		db: db,
+		db: pool,
 	}, nil
 }
 func (r *repo) GetByID(ctx context.Context, id int) (*CommentInfo, error) {

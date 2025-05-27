@@ -3,19 +3,18 @@ package token
 import (
 	"context"
 	"fmt"
+	"twitter-api/pkg/db"
 	"twitter-api/pkg/types"
 	"twitter-api/pkg/utils"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repo struct {
-	db *pgxpool.Pool
+	db db.Pool
 }
 
-func NewRepo(db *pgxpool.Pool) *Repo {
+func NewRepo(pool db.Pool) *Repo {
 	return &Repo{
-		db: db,
+		db: pool,
 	}
 }
 
