@@ -7,12 +7,12 @@ import (
 )
 
 type Service struct {
-	commentRepo *comment.Repo
+	commentRepo comment.Repo
 }
 
-func NewService(commentRepo *comment.Repo) *Service {
+func NewService(r comment.Repo) *Service {
 	return &Service{
-		commentRepo: commentRepo,
+		commentRepo: r,
 	}
 }
 

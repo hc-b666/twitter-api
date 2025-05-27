@@ -15,7 +15,16 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres:latest
+        options: >-
+          --name postgres
+          -e POSTGRES_USER=postgres
+          -e POSTGRES_PASSWORD=postgres
+          -e POSTGRES_DB=db
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

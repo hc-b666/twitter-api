@@ -3,20 +3,31 @@ package comment
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"twitter-api/pkg/db"
 )
 
-type Repo struct {
-	db *pgxpool.Pool
+type Repo interface {
+	Create(ctx context.Context, userID, postID int, comment *CommentDTO) (int, error)
+	GetByID(ctx context.Context, id int) (*CommentInfo, error)
+	GetByUserID(ctx context.Context, userID int) ([]*UserComment, error)
+	GetAllCommentsToPost(ctx context.Context, postId, limit, offset int) ([]*GetAllCommentsDTO, error)
+	GetAllComments(ctx context.Context, limit, offset int) ([]*Comment, error)
+	Update(ctx context.Context, id int, content string) error
+	HardDelete(ctx context.Context, id int) error
+	SoftDelete(ctx context.Context, id int) error
+	IsAuthor(ctx context.Context, userID, commentID int) (bool, error)
 }
 
-func NewRepo(db *pgxpool.Pool) *Repo {
-	return &Repo{
+type repo struct {
+	db db.Pool
+}
+
+func NewRepo(db db.Pool) (Repo, error) {
+	return &repo{
 		db: db,
-	}
+	}, nil
 }
-
-func (r *Repo) GetByID(ctx context.Context, id int) (*CommentInfo, error) {
+func (r *repo) GetByID(ctx context.Context, id int) (*CommentInfo, error) {
 	query := `
 		select id, user_id, post_id,content, created_at, updated_at
 		from comment
@@ -39,7 +50,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*CommentInfo, error) {
 	return comment, nil
 }
 
-func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*UserComment, error) {
+func (r *repo) GetByUserID(ctx context.Context, userID int) ([]*UserComment, error) {
 	query := `
 		select c.id, c.user_id, c.post_id, c.content, c.created_at, u.email 
 		from comment c
@@ -77,7 +88,7 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*UserComment, err
 	return comments, nil
 }
 
-func (r *Repo) Create(ctx context.Context, userID, postID int, comment *CommentDTO) (int, error) {
+func (r *repo) Create(ctx context.Context, userID, postID int, comment *CommentDTO) (int, error) {
 	var id int
 	query := `
 		insert into comment (user_id, post_id, content)
@@ -98,7 +109,7 @@ func (r *Repo) Create(ctx context.Context, userID, postID int, comment *CommentD
 	return id, nil
 }
 
-func (r *Repo) SoftDelete(ctx context.Context, id int) error {
+func (r *repo) SoftDelete(ctx context.Context, id int) error {
 	query := `
 		update comment
     set deleted_at = now()
@@ -113,7 +124,7 @@ func (r *Repo) SoftDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *Repo) HardDelete(ctx context.Context, id int) error {
+func (r *repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from comment
 			where id = $1;`
 
@@ -125,7 +136,7 @@ func (r *Repo) HardDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *Repo) Update(ctx context.Context, id int, content string) error {
+func (r *repo) Update(ctx context.Context, id int, content string) error {
 	query := `
 		update comment
 		set content = $1, updated_at = now()
@@ -140,7 +151,7 @@ func (r *Repo) Update(ctx context.Context, id int, content string) error {
 	return nil
 }
 
-func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId, limit, offset int) ([]*GetAllCommentsDTO, error) {
+func (r *repo) GetAllCommentsToPost(ctx context.Context, postId, limit, offset int) ([]*GetAllCommentsDTO, error) {
 	query := `
 		select c.id, c.user_id, c.content, c.created_at, c.updated_at, u.email
 		from comment c 
@@ -180,7 +191,7 @@ func (r *Repo) GetAllCommentsToPost(ctx context.Context, postId, limit, offset i
 	return comments, nil
 }
 
-func (r *Repo) GetAllComments(ctx context.Context, limit, offset int) ([]*Comment, error) {
+func (r *repo) GetAllComments(ctx context.Context, limit, offset int) ([]*Comment, error) {
 	query := `
 		select id, user_id, post_id,content, created_at, updated_at, deleted_at	
 		from comment
@@ -219,7 +230,7 @@ func (r *Repo) GetAllComments(ctx context.Context, limit, offset int) ([]*Commen
 	return comments, nil
 }
 
-func (r *Repo) IsAuthor(ctx context.Context, userID, commentID int) (bool, error) {
+func (r *repo) IsAuthor(ctx context.Context, userID, commentID int) (bool, error) {
 	query := `
 		select exists(
 			select 1 from comment
