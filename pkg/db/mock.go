@@ -94,6 +94,52 @@ func (m *MockRow) Scan(dest ...interface{}) error {
 	return args.Error(0)
 }
 
+type MockRows struct {
+	mock.Mock
+}
+
+func (m *MockRows) Next() bool {
+	args := m.Called()
+	return args.Bool(0)
+}
+
+func (m *MockRows) Scan(dest ...interface{}) error {
+	args := m.Called(dest...)
+	return args.Error(0)
+}
+
+func (m *MockRows) Close() {
+	m.Called()
+}
+
+func (m *MockRows) Err() error {
+	args := m.Called()
+	return args.Error(0)
+}
+func (m *MockRows) CommandTag() pgconn.CommandTag {
+	args := m.Called()
+	return args.Get(0).(pgconn.CommandTag)
+}
+
+func (m *MockRows) FieldDescriptions() []pgconn.FieldDescription {
+	args := m.Called()
+	return args.Get(0).([]pgconn.FieldDescription)
+}
+
+func (m *MockRows) Values() ([]interface{}, error) {
+	args := m.Called()
+	return args.Get(0).([]interface{}), args.Error(1)
+}
+
+func (m *MockRows) RawValues() [][]byte {
+	args := m.Called()
+	return args.Get(0).([][]byte)
+}
+func (m *MockRows) Conn() *pgx.Conn {
+	args := m.Called()
+	return args.Get(0).(*pgx.Conn)
+}
+
 type MockTx struct {
 	mock.Mock
 }

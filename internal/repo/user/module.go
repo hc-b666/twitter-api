@@ -8,19 +8,26 @@ import (
 	"twitter-api/pkg/utils"
 )
 
-type Repo struct {
+type Repo interface {
+	GetAll(ctx context.Context) ([]*AdminUser, error)
+	GetByID(ctx context.Context, id int) (*UserProfile, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	Create(ctx context.Context, userDTO *RegisterUserDTO) (int, error)
+	CreateAdmin(ctx context.Context, userDTO *RegisterUserDTO) (int, error)
+}
+type repo struct {
 	db db.Pool
 	l  *logger.Logger
 }
 
-func NewRepo(pool db.Pool, l *logger.Logger) *Repo {
-	return &Repo{
+func NewRepo(pool db.Pool, l *logger.Logger) (Repo, error) {
+	return &repo{
 		db: pool,
 		l:  l,
-	}
+	}, nil
 }
 
-func (r *Repo) GetAll(ctx context.Context) ([]*AdminUser, error) {
+func (r *repo) GetAll(ctx context.Context) ([]*AdminUser, error) {
 	query := `
 		select 
 			u.id, 
@@ -69,7 +76,7 @@ func (r *Repo) GetAll(ctx context.Context) ([]*AdminUser, error) {
 	return users, nil
 }
 
-func (r *Repo) GetByID(ctx context.Context, id int) (*UserProfile, error) {
+func (r *repo) GetByID(ctx context.Context, id int) (*UserProfile, error) {
 	query := `
 		select id, email, role, created_at, updated_at
 		from "user"
@@ -91,7 +98,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*UserProfile, error) {
 	return user, nil
 }
 
-func (r *Repo) GetByEmail(ctx context.Context, email string) (*User, error) {
+func (r *repo) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		select id, email, password, role, created_at, updated_at, deleted_at
 		from "user"
@@ -115,7 +122,7 @@ func (r *Repo) GetByEmail(ctx context.Context, email string) (*User, error) {
 	return user, nil
 }
 
-func (r *Repo) Create(ctx context.Context, userDTO *RegisterUserDTO) (int, error) {
+func (r *repo) Create(ctx context.Context, userDTO *RegisterUserDTO) (int, error) {
 	var id int
 	query := `
 		insert into "user" (email, password)
@@ -141,7 +148,7 @@ func (r *Repo) Create(ctx context.Context, userDTO *RegisterUserDTO) (int, error
 	return id, nil
 }
 
-func (r *Repo) CreateAdmin(ctx context.Context, userDTO *RegisterUserDTO) (int, error) {
+func (r *repo) CreateAdmin(ctx context.Context, userDTO *RegisterUserDTO) (int, error) {
 	var id int
 	query := `
 		insert into "user" (email, password, role)

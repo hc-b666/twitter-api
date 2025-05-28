@@ -3,6 +3,7 @@ package comment
 import (
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -45,56 +46,56 @@ func TestRepo_Update(t *testing.T) {
 	})
 }
 
-// func TestRepo_GetTaskByID(t *testing.T) {
-//	t.Run("error on get task by id", func(t *testing.T) {
-//		mockPool := new(db.MockPool)
-//		mockRow := new(db.MockRow)
-//		defer mockPool.AssertExpectations(t)
-//		defer mockRow.AssertExpectations(t)
-//
-//		pool := &repo{db: mockPool}
-//
-//		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
-//			Return(mockRow)
-//		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-//			mock.Anything, mock.Anything).Return(pgx.ErrNoRows)
-//
-//		task, err := pool.GetTaskByID(context.Background(), "1")
-//		assert.NotNil(t, err)
-//		assert.Nil(t, task)
-//	})
-//	t.Run("success on get task by id", func(t *testing.T) {
-//		mockPool := new(db.MockPool)
-//		mockRow := new(db.MockRow)
-//		defer mockPool.AssertExpectations(t)
-//		defer mockRow.AssertExpectations(t)
-//
-//		pool := &repo{db: mockPool}
-//
-//		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
-//			Return(mockRow)
-//		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-//			mock.Anything, mock.Anything).Return(nil)
-//
-//		task, err := pool.GetTaskByID(context.Background(), "1")
-//		assert.Nil(t, err)
-//		assert.NotNil(t, task)
-//	})
-//	t.Run("error on get task by id", func(t *testing.T) {
-//		mockPool := new(db.MockPool)
-//		mockRow := new(db.MockRow)
-//		defer mockPool.AssertExpectations(t)
-//		defer mockRow.AssertExpectations(t)
-//
-//		pool := &repo{db: mockPool}
-//
-//		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
-//			Return(mockRow)
-//		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-//			mock.Anything, mock.Anything).Return(errors.New("error"))
-//
-//		task, err := pool.GetTaskByID(context.Background(), "1")
-//		assert.NotNil(t, err)
-//		assert.Nil(t, task)
-//	})
-// }
+func TestRepo_GetCommentByID(t *testing.T) {
+	t.Run("error on get comment by id", func(t *testing.T) {
+		mockPool := new(db.MockPool)
+		mockRow := new(db.MockRow)
+		defer mockPool.AssertExpectations(t)
+		defer mockRow.AssertExpectations(t)
+
+		pool := &repo{db: mockPool}
+
+		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
+			Return(mockRow)
+		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything).Return(pgx.ErrNoRows)
+
+		task, err := pool.GetByID(context.Background(), 1)
+		assert.NotNil(t, err)
+		assert.Nil(t, task)
+	})
+	t.Run("success on get comment by id", func(t *testing.T) {
+		mockPool := new(db.MockPool)
+		mockRow := new(db.MockRow)
+		defer mockPool.AssertExpectations(t)
+		defer mockRow.AssertExpectations(t)
+
+		pool := &repo{db: mockPool}
+
+		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
+			Return(mockRow)
+		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything).Return(nil)
+
+		task, err := pool.GetByID(context.Background(), 0)
+		assert.Nil(t, err)
+		assert.NotNil(t, task)
+	})
+	t.Run("error on get comment by id", func(t *testing.T) {
+		mockPool := new(db.MockPool)
+		mockRow := new(db.MockRow)
+		defer mockPool.AssertExpectations(t)
+		defer mockRow.AssertExpectations(t)
+
+		pool := &repo{db: mockPool}
+
+		mockPool.On("QueryRow", mock.Anything, mock.Anything, mock.Anything).
+			Return(mockRow)
+		mockRow.On("Scan", mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything).Return(errors.New("error"))
+
+		task, err := pool.GetByID(context.Background(), 0)
+		assert.NotNil(t, err)
+		assert.Nil(t, task)
+	})
+}

@@ -10,17 +10,16 @@ import (
 )
 
 type Service struct {
-	userRepo *user.Repo
+	userRepo user.Repo
 	l        *logger.Logger
 }
 
-func NewService(userRepo *user.Repo, l *logger.Logger) *Service {
+func NewService(userRepo user.Repo, l *logger.Logger) *Service {
 	return &Service{
 		userRepo: userRepo,
 		l:        l,
 	}
 }
-
 func (s *Service) GetAll(ctx context.Context) ([]*user.AdminUser, error) {
 	users, err := s.userRepo.GetAll(ctx)
 	if err != nil {

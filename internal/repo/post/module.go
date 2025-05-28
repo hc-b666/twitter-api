@@ -7,17 +7,29 @@ import (
 	"twitter-api/pkg/db"
 )
 
-type Repo struct {
+type Repo interface {
+	GetAll(ctx context.Context, limit, offset int) ([]*GetAllPostsDTO, error)
+	GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error)
+	GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error)
+	Create(ctx context.Context, userID int, content, fileURL string) (int, error)
+	SoftDelete(ctx context.Context, id int) error
+	HardDelete(ctx context.Context, id int) error
+	Update(ctx context.Context, id int, content, fileURL string) (*PostInfo, error)
+	UpdateContent(ctx context.Context, id int, content string) error
+	UpdateFileURL(ctx context.Context, id int, fileURL string) error
+	IsAuthor(ctx context.Context, postID, userID int) (bool, error)
+}
+type repo struct {
 	db db.Pool
 }
 
-func NewRepo(pool db.Pool) *Repo {
-	return &Repo{
+func NewRepo(pool db.Pool) (Repo, error) {
+	return &repo{
 		db: pool,
-	}
+	}, nil
 }
 
-func (r *Repo) GetAll(ctx context.Context, limit, offset int) ([]*GetAllPostsDTO, error) {
+func (r *repo) GetAll(ctx context.Context, limit, offset int) ([]*GetAllPostsDTO, error) {
 	query := `
 		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
 		from post p
@@ -58,7 +70,7 @@ func (r *Repo) GetAll(ctx context.Context, limit, offset int) ([]*GetAllPostsDTO
 	return posts, nil
 }
 
-func (r *Repo) GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error) {
+func (r *repo) GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error) {
 	query := `
 		select p.id, p.user_id, p.content, p.file_url, p.created_at, p.updated_at, u.email
 		from post p
@@ -83,7 +95,7 @@ func (r *Repo) GetByID(ctx context.Context, id int) (*GetAllPostsDTO, error) {
 	return post, nil
 }
 
-func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error) {
+func (r *repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error) {
 	query := `
 		select id, user_id, content, file_url, created_at, updated_at
 		from post
@@ -121,7 +133,7 @@ func (r *Repo) GetByUserID(ctx context.Context, userID int) ([]*PostInfo, error)
 	return posts, nil
 }
 
-func (r *Repo) Create(ctx context.Context, userID int, content, fileURL string) (int, error) {
+func (r *repo) Create(ctx context.Context, userID int, content, fileURL string) (int, error) {
 	var id int
 	query := `
 		insert into post (user_id, content, file_url)
@@ -143,7 +155,7 @@ func (r *Repo) Create(ctx context.Context, userID int, content, fileURL string) 
 	return id, nil
 }
 
-func (r *Repo) SoftDelete(ctx context.Context, id int) error {
+func (r *repo) SoftDelete(ctx context.Context, id int) error {
 	query := `
 		update post
 		set deleted_at = now()
@@ -158,7 +170,7 @@ func (r *Repo) SoftDelete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *Repo) HardDelete(ctx context.Context, id int) error {
+func (r *repo) HardDelete(ctx context.Context, id int) error {
 	query := `delete from post
     			where id = $1;`
 
@@ -169,7 +181,8 @@ func (r *Repo) HardDelete(ctx context.Context, id int) error {
 
 	return nil
 }
-func (r *Repo) Update(ctx context.Context, id int, content, fileURL string) (*PostInfo, error) {
+
+func (r *repo) Update(ctx context.Context, id int, content, fileURL string) (*PostInfo, error) {
 	query := `update post
 		set content=$1, file_url=$2, updated_at=now()
 		where id = $3;`
@@ -189,7 +202,7 @@ func (r *Repo) Update(ctx context.Context, id int, content, fileURL string) (*Po
 	return post, nil
 }
 
-func (r *Repo) UpdateContent(ctx context.Context, id int, content string) error {
+func (r *repo) UpdateContent(ctx context.Context, id int, content string) error {
 	query := `
 		update post
 		set content = $1, updated_at = now()
@@ -204,7 +217,7 @@ func (r *Repo) UpdateContent(ctx context.Context, id int, content string) error 
 	return nil
 }
 
-func (r *Repo) UpdateFileURL(ctx context.Context, id int, fileURL string) error {
+func (r *repo) UpdateFileURL(ctx context.Context, id int, fileURL string) error {
 	query := `
 		update post
 		set file_url = $1, updated_at = now()
@@ -219,7 +232,7 @@ func (r *Repo) UpdateFileURL(ctx context.Context, id int, fileURL string) error 
 	return nil
 }
 
-func (r *Repo) IsAuthor(ctx context.Context, postID, userID int) (bool, error) {
+func (r *repo) IsAuthor(ctx context.Context, postID, userID int) (bool, error) {
 	query := `
 		select exists(
 			select 1
