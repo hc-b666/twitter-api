@@ -27,10 +27,9 @@ func (m *MockPool) QueryRow(ctx context.Context, sql string, args ...interface{}
 }
 
 func (m *MockPool) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	called := m.Called(ctx, sql, args)
+	called := m.Called(append([]interface{}{ctx, sql}, args...)...) // ← correct way
 	return called.Get(0).(pgx.Rows), called.Error(1)
 }
-
 func (m *MockPool) Begin(ctx context.Context) (pgx.Tx, error) {
 	called := m.Called(ctx)
 	return called.Get(0).(pgx.Tx), called.Error(1)
@@ -98,14 +97,18 @@ type MockRows struct {
 	mock.Mock
 }
 
-func (m *MockRows) Next() bool {
-	args := m.Called()
-	return args.Bool(0)
+type MockResult struct {
+	mock.Mock
 }
 
-func (m *MockRows) Scan(dest ...interface{}) error {
-	args := m.Called(dest...)
-	return args.Error(0)
+func (m *MockRows) Next() bool {
+	ret := m.Called()
+	return ret.Bool(0)
+}
+
+func (m *MockRows) Scan(dest ...any) error {
+	ret := m.Called(dest...)
+	return ret.Error(0)
 }
 
 func (m *MockRows) Close() {
@@ -113,31 +116,25 @@ func (m *MockRows) Close() {
 }
 
 func (m *MockRows) Err() error {
-	args := m.Called()
-	return args.Error(0)
+	ret := m.Called()
+	return ret.Error(0)
+}
+func (m *MockRows) FieldDescriptions() []pgconn.FieldDescription {
+	ret := m.Called()
+	return ret.Get(0).([]pgconn.FieldDescription)
+}
+
+func (m *MockRows) Values() ([]any, error) {
+	ret := m.Called()
+	return ret.Get(0).([]any), ret.Error(1)
+}
+func (m *MockResult) RowsAffected() int64 {
+	ret := m.Called()
+	return ret.Get(0).(int64)
 }
 func (m *MockRows) CommandTag() pgconn.CommandTag {
 	args := m.Called()
 	return args.Get(0).(pgconn.CommandTag)
-}
-
-func (m *MockRows) FieldDescriptions() []pgconn.FieldDescription {
-	args := m.Called()
-	return args.Get(0).([]pgconn.FieldDescription)
-}
-
-func (m *MockRows) Values() ([]interface{}, error) {
-	args := m.Called()
-	return args.Get(0).([]interface{}), args.Error(1)
-}
-
-func (m *MockRows) RawValues() [][]byte {
-	args := m.Called()
-	return args.Get(0).([][]byte)
-}
-func (m *MockRows) Conn() *pgx.Conn {
-	args := m.Called()
-	return args.Get(0).(*pgx.Conn)
 }
 
 type MockTx struct {

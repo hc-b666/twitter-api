@@ -45,7 +45,7 @@ func (r *repo) GetByToken(ctx context.Context, token string) (*Token, error) {
 }
 
 func (r *repo) Create(ctx context.Context, userID int,
-	role types.UserRole, ) (accessToken, refreshToken string, err error) {
+	role types.UserRole) (accessToken, refreshToken string, err error) {
 	query := `
 		insert into refresh_token (token, user_id, role, expires_at)
 		values ($1, $2, $3, $4);
