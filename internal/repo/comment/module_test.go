@@ -403,3 +403,57 @@ func TestRepo_IsAuthor(t *testing.T) {
 		assert.Zero(t, comment)
 	})
 }
+
+func TestRepo_GetByUserID_Success(t *testing.T) {
+
+	ctx := context.Background()
+	mockPool := new(db.MockPool)
+	mockRows := new(db.MockRows)
+	var rows pgx.Rows = mockRows
+	mockPool.On("Query", mock.Anything, mock.Anything, mock.Anything).Return(rows, nil)
+	mockRows.On("Next").Return(true).Once()
+	mockRows.On("Scan", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
+
+	mockRows.On("Next").Return(true).Once()
+	mockRows.On("Scan", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
+
+	mockRows.On("Next").Return(false).Once()
+	mockRows.On("Err").Return(nil)
+	mockRows.On("Close").Return(nil)
+
+	r, _ := NewRepo(mockPool)
+
+	comments, err := r.GetByUserID(ctx, 1)
+
+	require.NoError(t, err)
+	require.Len(t, comments, 2)
+
+	mockPool.AssertExpectations(t)
+	mockRows.AssertExpectations(t)
+}
+
+func TestRepo_GetByUserID_Empty(t *testing.T) {
+	ctx := context.Background()
+	mockPool := new(db.MockPool)
+	mockRows := new(db.MockRows)
+
+	mockPool.On("Query", mock.Anything, mock.Anything, mock.Anything).Return(mockRows, nil)
+
+	mockRows.On("Next").Return(false).Once()
+	mockRows.On("Err").Return(nil)
+	mockRows.On("Close").Return(nil)
+
+	r, _ := NewRepo(mockPool)
+
+	comments, err := r.GetByUserID(ctx, 1)
+
+	require.NoError(t, err)
+	require.Len(t, comments, 0)
+
+	mockPool.AssertExpectations(t)
+	mockRows.AssertExpectations(t)
+}
