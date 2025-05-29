@@ -102,8 +102,7 @@ func (r *repo) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		select id, email, password, role, created_at, updated_at, deleted_at
 		from "user"
-		where email = $1;
-	`
+		where email = $1;`
 
 	user := &User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(
