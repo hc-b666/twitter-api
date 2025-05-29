@@ -7,12 +7,12 @@ import (
 )
 
 type Service struct {
-	postRepo *post.Repo
+	postRepo post.Repo
 }
 
-func NewService(postRepo *post.Repo) *Service {
+func NewService(r post.Repo) *Service {
 	return &Service{
-		postRepo: postRepo,
+		postRepo: r,
 	}
 }
 

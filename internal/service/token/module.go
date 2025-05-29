@@ -11,17 +11,14 @@ import (
 )
 
 type Service struct {
-	tokenRepository *token.Repo
+	tokenRepository token.Repo
 }
 
-func NewService(
-	tokenRepository *token.Repo,
-) *Service {
+func NewService(r token.Repo) *Service {
 	return &Service{
-		tokenRepository: tokenRepository,
+		tokenRepository: r,
 	}
 }
-
 func (s *Service) GetByToken(ctx context.Context, tokenStr string) (*token.Token, error) {
 	tkn, err := s.tokenRepository.GetByToken(ctx, tokenStr)
 	if err != nil {

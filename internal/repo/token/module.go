@@ -8,17 +8,21 @@ import (
 	"twitter-api/pkg/utils"
 )
 
-type Repo struct {
+type Repo interface {
+	GetByToken(ctx context.Context, token string) (*Token, error)
+	Create(ctx context.Context, userID int, role types.UserRole) (accessToken, refreshToken string, err error)
+}
+type repo struct {
 	db db.Pool
 }
 
-func NewRepo(pool db.Pool) *Repo {
-	return &Repo{
+func NewRepo(pool db.Pool) (Repo, error) {
+	return &repo{
 		db: pool,
-	}
+	}, nil
 }
 
-func (r *Repo) GetByToken(ctx context.Context, token string) (*Token, error) {
+func (r *repo) GetByToken(ctx context.Context, token string) (*Token, error) {
 	query := `
 		select id, token, user_id, role, expires_at
 		from refresh_token
@@ -40,14 +44,8 @@ func (r *Repo) GetByToken(ctx context.Context, token string) (*Token, error) {
 	return tokenData, nil
 }
 
-func (r *Repo) Create(
-	ctx context.Context,
-	userID int,
-	role types.UserRole,
-) (
-	accessToken, refreshToken string,
-	err error,
-) {
+func (r *repo) Create(ctx context.Context, userID int,
+	role types.UserRole) (accessToken, refreshToken string, err error) {
 	query := `
 		insert into refresh_token (token, user_id, role, expires_at)
 		values ($1, $2, $3, $4);
