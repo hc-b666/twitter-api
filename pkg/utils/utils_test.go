@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"time"
+	"twitter-api/pkg/errs"
 	"twitter-api/pkg/types"
 )
 
@@ -105,4 +106,46 @@ func TestCreateRefreshToken(t *testing.T) {
 	exp, ok := claims["exp"].(float64)
 	require.True(t, ok)
 	require.Greater(t, int64(exp), time.Now().Unix())
+}
+
+func TestGenerateJwtTokens_Success(t *testing.T) {
+	access, refresh, err := GenerateJwtTokens(1, types.UserRole("user"))
+	require.NoError(t, err)
+	require.NotEmpty(t, access)
+	require.NotEmpty(t, refresh)
+}
+
+func TestVerifyAccessToken_Success(t *testing.T) {
+	access, _, _ := GenerateJwtTokens(10, types.UserRole("admin"))
+
+	id, role, err := VerifyAccessToken(access)
+	require.NoError(t, err)
+	require.Equal(t, 10, id)
+	require.Equal(t, types.UserRole("admin"), role)
+}
+
+func TestVerifyAccessToken_Invalid(t *testing.T) {
+	_, _, err := VerifyAccessToken("invalid.token.here")
+	require.Error(t, err)
+}
+
+func TestVerifyRefreshToken_Success(t *testing.T) {
+	_, refresh, _ := GenerateJwtTokens(5, types.UserRole("user"))
+
+	err := VerifyRefreshToken(refresh, 5, types.UserRole("user"))
+	require.NoError(t, err)
+}
+
+func TestVerifyRefreshToken_InvalidUser(t *testing.T) {
+	_, refresh, _ := GenerateJwtTokens(5, types.UserRole("user"))
+
+	err := VerifyRefreshToken(refresh, 10, types.UserRole("user")) // wrong ID
+	require.ErrorIs(t, err, errs.ErrInvalidUserID)
+}
+
+func TestVerifyRefreshToken_InvalidRole(t *testing.T) {
+	_, refresh, _ := GenerateJwtTokens(5, types.UserRole("user"))
+
+	err := VerifyRefreshToken(refresh, 5, types.UserRole("admin")) // wrong role
+	require.ErrorIs(t, err, errs.ErrInvalidUserRole)
 }
