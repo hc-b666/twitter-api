@@ -97,124 +97,47 @@ type MockRows struct {
 	mock.Mock
 }
 
-type MockResult struct {
-	mock.Mock
-}
-
 func (m *MockRows) Next() bool {
-	ret := m.Called()
-	return ret.Bool(0)
+	args := m.Called()
+	return args.Bool(0)
 }
 
-func (m *MockRows) Scan(dest ...any) error {
-	ret := m.Called(dest...)
-	return ret.Error(0)
+func (m *MockRows) Scan(dest ...interface{}) error {
+	args := m.Called(dest...)
+	return args.Error(0)
+}
+
+func (m *MockRows) Err() error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 func (m *MockRows) Close() {
 	m.Called()
 }
 
-func (m *MockRows) Err() error {
-	ret := m.Called()
-	return ret.Error(0)
-}
-func (m *MockRows) FieldDescriptions() []pgconn.FieldDescription {
-	ret := m.Called()
-	return ret.Get(0).([]pgconn.FieldDescription)
-}
-
-func (m *MockRows) Values() ([]any, error) {
-	ret := m.Called()
-	return ret.Get(0).([]any), ret.Error(1)
-}
-func (m *MockResult) RowsAffected() int64 {
-	ret := m.Called()
-	return ret.Get(0).(int64)
-}
-func (m *MockRows) CommandTag() pgconn.CommandTag {
-	args := m.Called()
-	return args.Get(0).(pgconn.CommandTag)
-}
-
-type MockTx struct {
-	mock.Mock
-}
-
-func (m *MockTx) Conn() *pgx.Conn {
+func (m *MockRows) Conn() *pgx.Conn {
 	args := m.Called()
 	return args.Get(0).(*pgx.Conn)
 }
 
-func (m *MockTx) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-	called := m.Called(ctx, sql, args)
-	return called.Get(0).(pgconn.CommandTag), called.Error(1)
-}
-
-func (m *MockTx) Begin(ctx context.Context) (pgx.Tx, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(pgx.Tx), args.Error(1)
-}
-
-func (m *MockTx) Rollback(ctx context.Context) error {
-	return m.Called(ctx).Error(0)
-}
-
-func (m *MockTx) Commit(ctx context.Context) error {
-	return m.Called(ctx).Error(0)
-}
-
-func (m *MockTx) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	called := m.Called(ctx, sql, args)
-	return called.Get(0).(pgx.Rows), called.Error(1)
-}
-
-func (m *MockTx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	called := m.Called(ctx, sql, args)
-	return called.Get(0).(pgx.Row)
-}
-
-func (m *MockTx) CopyFrom(ctx context.Context, tableName pgx.Identifier,
-	columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
-	args := m.Called(ctx, tableName, columnNames, rowSrc)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockTx) LargeObjects() pgx.LargeObjects {
+// Add these methods if your pgx version requires them:
+func (m *MockRows) RawValues() [][]byte {
 	args := m.Called()
-	return args.Get(0).(pgx.LargeObjects)
+	return args.Get(0).([][]byte)
 }
 
-func (m *MockTx) Prepare(ctx context.Context, name, sql string) (*pgconn.StatementDescription, error) {
-	args := m.Called(ctx, name, sql)
-	return args.Get(0).(*pgconn.StatementDescription), args.Error(1)
-}
-
-func (m *MockTx) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
-	args := m.Called(ctx, b)
-	return args.Get(0).(pgx.BatchResults)
-}
-
-type MockBatchResults struct {
-	mock.Mock
-}
-
-func (m *MockBatchResults) Close() error {
+func (m *MockRows) Values() ([]interface{}, error) {
 	args := m.Called()
-	return args.Error(0)
+	return args.Get(0).([]interface{}), args.Error(1)
 }
 
-func (m *MockBatchResults) Exec() (pgconn.CommandTag, error) {
+func (m *MockRows) FieldDescriptions() []pgconn.FieldDescription {
 	args := m.Called()
-	return args.Get(0).(pgconn.CommandTag), args.Error(1)
+	return args.Get(0).([]pgconn.FieldDescription)
 }
 
-func (m *MockBatchResults) Query() (pgx.Rows, error) {
+func (m *MockRows) CommandTag() pgconn.CommandTag {
 	args := m.Called()
-	return args.Get(0).(pgx.Rows), args.Error(1)
-}
-
-func (m *MockBatchResults) QueryRow() pgx.Row {
-	args := m.Called()
-	return args.Get(0).(pgx.Row)
+	return args.Get(0).(pgconn.CommandTag)
 }
