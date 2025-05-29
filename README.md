@@ -1,4 +1,4 @@
-# 💬 Comment API
+# 💬 Twitter API
 > A modern social platform backend - Think Twitter/X, but built with Go!
 
 [![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
